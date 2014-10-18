@@ -1,0 +1,39 @@
+## Interface: 60000
+
+## Title: Squire3
+## Notes: One-click smart mounting.
+## Author: Adirelle
+## Version: @project-version@
+## SavedVariables: Squire3DB
+## X-Date: @project-date-iso@
+## OptionalDeps: Ace3, AdiDebug
+## X-License: GNU General Public License version 3
+
+#@no-lib-strip@
+libs\LibStub\LibStub.lua
+libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+libs\AceDB-3.0\AceDB-3.0.xml
+#@end-no-lib-strip@
+
+Localization.lua
+
+Squire3.lua
+Engine.lua
+Data.lua
+
+#@debug@
+## Version: DEV
+#@end-debug@
+#@non-debug@
+# ## Notes: @localization(locale="enUS", key="Notes", namespace="TOC")@
+# ## Notes-frFR: @localization(locale="frFR", key="Notes", namespace="TOC")@
+# ## Notes-deDE: @localization(locale="deDE", key="Notes", namespace="TOC")@
+# ## Notes-itIT: @localization(locale="itIT", key="Notes", namespace="TOC")@
+# ## Notes-koKR: @localization(locale="koKR", key="Notes", namespace="TOC")@
+# ## Notes-esMX: @localization(locale="esMX", key="Notes", namespace="TOC")@
+# ## Notes-ruRU: @localization(locale="ruRU", key="Notes", namespace="TOC")@
+# ## Notes-zhCN: @localization(locale="zhCN", key="Notes", namespace="TOC")@
+# ## Notes-esES: @localization(locale="esES", key="Notes", namespace="TOC")@
+# ## Notes-zhTW: @localization(locale="zhTW", key="Notes", namespace="TOC")@
+# ## Notes-ptBR: @localization(locale="ptBR", key="Notes", namespace="TOC")@
+#@end-non-debug@

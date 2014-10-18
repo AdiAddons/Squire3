@@ -1,0 +1,4 @@
+-
+    type: textile
+    input-file: README.md
+    output-page: Main

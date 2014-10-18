@@ -1,0 +1,8 @@
+<Bindings>
+    <Binding name="CLICK Squire3Button:LeftButton" header="SQUIRE3">
+        -- Do the job !
+    </Binding>
+    <Binding name="CLICK Squire3Button:dismount">
+        -- Do the job !
+    </Binding>
+</Bindings>
