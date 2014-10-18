@@ -135,47 +135,49 @@ function addon:AddCasts(append, env, settings)
 end
 
 local C_MountJournal = C_MountJournal
+local lastSeen = {}
 
+local function selectBest(currentScore, currentSpell, newScore, newSpell)
+	if newScore > currentScore or (newScore == currentScore and math.random() < 0.5) then
+		return newScore, newSpell
+	else
+		return currentScore, currentSpell
+	end
+end
 
 function addon:AddMounts(append, env, settings)
 	local flyableScore, flyableSpell = 0
 	local groundScore, groundSpell = 0
 	local swimmingScore, swimmingSpell = 0
-	print("AddMounts")
+	local now = GetTime()
 
 	for index = 1, C_MountJournal.GetNumMounts() do
 		local name, spellId, _, active, isUsable, _, isFavorite, _, _, hideOnChar, isCollected = C_MountJournal.GetMountInfo(index)
-		if isUsable and isCollected and not hideOnChar then
+		if isUsable and isCollected and isFavorite and not hideOnChar then
 			local _, _, _, _, mountType = C_MountJournal.GetMountInfoExtra(index)
+			local age = 25
+			if active then
+				lastSeen[spellId] = now
+				age = 0
+			elseif lastSeen[spellId] then
+				age = (0.0 + lastSeen[spellId] - now) / 1000.0
+			end
 			if mountType == 230 or mountType == 241 then
 				-- Ground and Ahn'Qiraj mounts
-				if groundScore < 100 then
-					groundScore, groundSpell = 100, spellId
-				end
+				groundScore, groundSpell = selectBest(groundScore, groundSpell, 100+age, spellId)
 			end
 			if mountType == 231 then
 				-- Riding Turtle and Sea Turtle
-				if groundScore < 70 then
-					groundScore, groundSpell = 70, spellId
-				end
-				if swimmingScore < 70 then
-					swimmingScore, swimmingSpell = 70, spellId
-				end
+				swimmingScore, swimmingSpell = selectBest(swimmingScore, swimmingSpell, 300+age, spellId)
 			end
 			if mountType == 232 or mountType == 254 then
 				-- Seahorses
-				if swimmingScore < 100 then
-					swimmingScore, swimmingSpell = 100, spellId
-				end
+				swimmingScore, swimmingSpell = selectBest(swimmingScore, swimmingSpell, 450+age, spellId)
 			end
 			if mountType == 248 then
 				-- Flying mounts
-				if groundScore < 70 then
-					groundScore, groundSpell = 70, spellId
-				end
-				if flyableScore < 70 then
-					flyableScore, flyableSpell = 70, spellId
-				end
+				groundScore, groundSpell = selectBest(groundScore, groundSpell, 100+age, spellId)
+				flyableScore, flyableSpell = selectBest(flyableScore, flyableSpell, 310+age, spellId)
 			end
 		end
 	end
