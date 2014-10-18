@@ -189,6 +189,6 @@ function addon:AddMounts(append, env, settings)
 		append("[flyable]"..GetSpellInfo(flyableSpell))
 	end
 	if groundScore > 0 then
-		append((GetSpellInfo(flyableSpell)))
+		append((GetSpellInfo(groundSpell)))
 	end
 end
