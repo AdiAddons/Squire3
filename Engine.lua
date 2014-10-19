@@ -109,9 +109,7 @@ do
 		end
 
 		local macro = tconcat(parts, "", 1, numParts)
-		--@debug@
-		print(macro)
-		--@end-debug@
+		addon.Debug(macro)
 		return macro
 	end
 end
