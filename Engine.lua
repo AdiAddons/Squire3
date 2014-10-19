@@ -27,10 +27,10 @@ local tconcat = table.concat
 --------------------------------------------------------------------------------
 
 local cancelSpells = {}
-function addon:RegisterCancelSpells(id, type, purpose, more, ...)
-	cancelSpells[id] = { type = type, purpose = purpose }
-	if more then
-		return self:RegisterCancelSpells(more, ...)
+function addon:RegisterCancelSpells(id, type, ...)
+	cancelSpells[id] = type
+	if ... then
+		return self:RegisterCancelSpells(...)
 	end
 end
 addon.cancelSpells = cancelSpells
@@ -40,10 +40,10 @@ addon.cancelSpells = cancelSpells
 --------------------------------------------------------------------------------
 
 local specialSpells = {}
-function addon:RegisterSpecialSpells(id, handler, more, ...)
-	tinsert(specialSpells, { id = id, handler = handler })
-	if more then
-		return self:RegisterSpecialSpells(more, ...)
+function addon:RegisterSpecialSpells(id, condition, ground, flying, swimming, ...)
+	tinsert(specialSpells, { id = id, condition = condition, ground = ground, flying = flying, swimming = swimming })
+	if ... then
+		return self:RegisterSpecialSpells(...)
 	end
 end
 addon.specialSpells = specialSpells
@@ -137,8 +137,8 @@ function addon:AddSafetyStop(append, env, settings)
 	if not cancel.dismount then
 		append("stopmacro", format('[mounted%s]', modifier))
 	end
-	for id, spell in pairs(cancelSpells) do
-		if IsPlayerSpell(id) and spell.type == "form" and not settings.cancel[tostring(id)] then
+	for id, type in pairs(cancelSpells) do
+		if IsPlayerSpell(id) and type == "form" and not settings.cancel[tostring(id)] then
 			local i = self:GetFormBySpellId(id)
 			if i then
 				append("stopmacro", format('[form:%d%s]', i, modifier))
@@ -149,11 +149,11 @@ end
 
 function addon:AddCancels(append, env, settings)
 	local cancelForm = false
-	for id, spell in pairs(cancelSpells) do
+	for id, type in pairs(cancelSpells) do
 		if IsPlayerSpell(id) and settings.cancel[tostring(id)] then
-			if spell.type == "form" then
+			if type == "form" then
 				cancelForm = true
-			elseif spell.type == "aura" then
+			elseif type == "aura" then
 				append("cancelaura", (GetSpellInfo(id)))
 			end
 		end
@@ -173,7 +173,7 @@ end
 function addon:AddSpells(append, env, settings)
 	for index, spell in ipairs(specialSpells) do
 		if IsPlayerSpell(spell.id) and settings.spells[spell.id] then
-			append("cast", format("%s!%s", spell.handler(env, settings) or "", GetSpellInfo(spell.id)))
+			append("cast", format("%s!%s", spell.condition, GetSpellInfo(spell.id)))
 		end
 	end
 end
@@ -205,9 +205,8 @@ function addon:IterateMounts(env, settings)
 			index = index + 1
 			local spell = specialSpells[1-index]
 			if IsPlayerSpell(spell.id) and settings.spells[spell.id] then
-				local condition, groundSpeed, flyingSpeed, swimmingSpeed = spell.handler(env, settings)
-				if SecureCmdOptionParse(condition) then
-					return spell.id, groundSpeed, flyingSpeed, swimmingSpeed
+				if SecureCmdOptionParse(spell.condition) then
+					return spell.id, spell.ground, spell.flying, spell.swimming
 				end
 			end
 		end

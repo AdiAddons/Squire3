@@ -27,53 +27,44 @@ isA = function() return true end
 
 if "Worgen" == select(2, UnitRace("player")) then
 	addon:RegisterSpecialSpells(
-		-- Running Wild
-		87840,
-		function(env)
-			return env.canMount, 100, nil, nil, "[outdoors,nocombat]"
-		end
+		87840, "[outdoors,nocombat]", 100, nil, nil -- Running Wild
 	)
 end
 
 if isA("DRUID") then
 	addon:RegisterCancelSpells(
-		   768, "form", "damage",  -- Cat form
-		   783, "form", "travel",  -- Travel form
-		  5487, "form", "tank",    -- Bear form
-		 24858, "form", "damage",  -- Moonkin form
-		114282, "aura", "cosmetic" -- Treant form
+		   768, "form", -- Cat form
+		   783, "form", -- Travel form
+		  5487, "form", -- Bear form
+		 24858, "form", -- Moonkin form
+		114282, "aura"  -- Treant form
 	)
 	addon:RegisterSpecialSpells(
-		-- Travel form
-		783, function(env) return "[nocombat,outdoors]", 100, 310, 100 end,
-		-- Cat form
-		768,  function(env) return "", 30, nil, nil end
+		783, "[nocombat,outdoors]", 100, 310, 100, -- Travel form
+		768, "", 30, nil, nil                      -- Cat form
 	)
 end
 
 if isA("HUNTER") then
 	addon:RegisterSpecialSpells(
-		-- Aspect of the Cheetah
-		5118, function(env) return "", 30 end
+		5118, "", 30, nil, nil -- Aspect of the Cheetah
 	)
 end
 
 if isA("MONK") then
 	addon:RegisterCancelSpells(
-		125883, "aura", "travel" -- Zen Flight
+		125883, "aura" -- Zen Flight
 	)
 	addon:RegisterSpecialSpells(
-		-- Zen Flight
-		125883, function(env) return "[nocombat,outdoors]", nil, 54, nil end
+		125883, "[nocombat,outdoors]", nil, 54, nil -- Zen Flight
 	)
 end
 
 if isA("SHAMAN") then
 	addon:RegisterCancelSpells(
-		2645, "aura", "travel" -- Ghost Wolf
+		2645, "aura" -- Ghost Wolf
 	)
 	addon:RegisterSpecialSpells(
-		-- Ghost Wolf
-		2645, function(env) return "", 30 end
+		2645, "", 30, nil, nil -- Ghost Wolf
 	)
 end
