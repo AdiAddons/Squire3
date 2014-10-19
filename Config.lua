@@ -113,6 +113,12 @@ Squire3_Load(function(addonName, addon)
 							disabled = InCombatLockdown,
 							order = 0,
 						},
+						toggleMode = {
+							name = L['Two-step mode'],
+							desc = L["When enabled, Squire3 will either dismount or mount each click, not both at the same time."],
+							type = 'toggle',
+							order = 5,
+						},
 						spells = {
 							name = L['Use spells'],
 							desc = L['Select which spells Squire3 should use.'],

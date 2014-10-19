@@ -183,6 +183,21 @@ function addon:AddCancels(append, env, settings)
 end
 
 function addon:AddToggleStop(append, env, settings)
+	if not settings.toggleMode then return end
+	if settings.cancel.vehicle then
+		append("stopmacro", "[vehicleui,canexitvehicule]")
+	end
+	if settings.cancel.mount then
+		append("stopmacro", "[mounted]")
+	end
+	for id, type in pairs(cancelSpells) do
+		if IsPlayerSpell(id) and type == "form" and not settings.cancel[tostring(id)] then
+			local i = self:GetFormBySpellId(id)
+			if i then
+				append("stopmacro", format('[form:%d]', i))
+			end
+		end
+	end
 end
 
 --------------------------------------------------------------------------------

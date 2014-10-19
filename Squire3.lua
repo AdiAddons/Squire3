@@ -48,6 +48,7 @@ local DEFAULT_SETTINGS = {
 		},
 		unsafeModifier = "shift",
 		groundModifier = "ctrl",
+		toggleMode = false,
 	}
 }
 
