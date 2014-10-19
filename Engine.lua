@@ -22,6 +22,10 @@ local addonName, addon = ...
 
 local tconcat = table.concat
 
+--------------------------------------------------------------------------------
+-- Spells to cancel
+--------------------------------------------------------------------------------
+
 local cancelSpells = {}
 function addon:RegisterCancelSpells(id, type, purpose, more, ...)
 	cancelSpells[id] = { type = type, purpose = purpose }
@@ -29,6 +33,10 @@ function addon:RegisterCancelSpells(id, type, purpose, more, ...)
 		return self:RegisterCancelSpells(more, ...)
 	end
 end
+
+--------------------------------------------------------------------------------
+-- Alternative spells
+--------------------------------------------------------------------------------
 
 local specialSpells = {}
 function addon:RegisterSpecialSpells(id, handler, more, ...)
@@ -38,9 +46,13 @@ function addon:RegisterSpecialSpells(id, handler, more, ...)
 	end
 end
 
+--------------------------------------------------------------------------------
+-- Main building method
+--------------------------------------------------------------------------------
+
 do
 	local parts, numParts = {}
-	
+
 	local function append(head, more, ...)
 		numParts = numParts + 1
 		parts[numParts] = head
@@ -75,6 +87,10 @@ do
 		return macro
 	end
 end
+
+--------------------------------------------------------------------------------
+-- Macro part building
+--------------------------------------------------------------------------------
 
 function addon:GetFormBySpellId(id)
 	for i = 1, GetNumShapeshiftForms() do
@@ -115,36 +131,73 @@ end
 function addon:AddStopMacro(append)
 end
 
-local spells, numSpells = {}
+--------------------------------------------------------------------------------
+-- Combat spell part
+--------------------------------------------------------------------------------
 
-local function appendSpell(txt)
-	numSpells = numSpells + 1
-	spells[numSpells] = txt
+function addon:AddSpells(append, env, settings)
+	local first = true
+	for index, spell in ipairs(specialSpells) do
+		if IsPlayerSpell(spell.id) then
+			if first then
+				append("\n/cast ")
+				first = false
+			else
+				append(";")
+			end
+			append((spell.handler(env, settings) or ""), (GetSpellInfo(spell.id)))
+		end
+	end
 end
 
-function addon:AddCasts(append, env, settings)
-	numSpells = 0
-	
-	for i, spell in ipairs(specialSpells) do
-		if IsPlayerSpell(spell.id) then
-			local isUsable, condition = spell.handler(env, settings)
-			if isUsable then
-				appendSpell((condition or "")..GetSpellInfo(spell.id))
+--------------------------------------------------------------------------------
+-- Mount part
+--------------------------------------------------------------------------------
+
+local mountTypeSpeeds = {
+	[230] = {100, nil, nil}, -- Ground mounts
+	[231] = {nil, nil, 100}, -- Riding Turtle and Sea Turtle
+	[232] = {nil, nil, 450}, -- Vashj'ir Seahorse
+	[241] = {100, nil, nil}, -- Ahn'Qiraj mounts
+	[247] = {100, 310, nil}, -- Red Flying Cloud
+	[248] = {100, 310, nil}, -- Flying mounts
+	[254] = {nil, nil, 450}, -- Subdued Seahorse
+	[269] = {100, nil, nil}, -- Water striders
+}
+local unknownMountType = {}
+
+-- Spell + mount iterator
+local C_MountJournal = C_MountJournal
+function addon:IterateMounts(env, settings)
+	local numMounts = C_MountJournal.GetNumMounts()
+	local index = -#specialSpells
+
+	return function()
+		while index < 0 do
+			index = index + 1
+			local spell = specialSpells[1-index]
+			if IsPlayerSpell(spell.id) then
+				local condition, groundSpeed, flyingSpeed, swimmingSpeed = spell.handler(env, settings)
+				if SecureCmdOptionParse(condition) then
+					return spell.id, groundSpeed, flyingSpeed, swimmingSpeed
+				end
+			end
+		end
+		while index < numMounts do
+			index = index + 1
+			local _, spellId, _, _, isUsable, _, isFavorite, _, _, hideOnChar, isCollected = C_MountJournal.GetMountInfo(index)
+			if isUsable and isCollected and isFavorite and not hideOnChar then
+				local _, _, _, _, mountType = C_MountJournal.GetMountInfoExtra(index)
+				if mountTypeSpeeds[mountType] then
+					return spellId, unpack(mountTypeSpeeds[mountType], 1, 3)
+				elseif not unknownMountType[mountType] then
+					geterrorhandler()(format("Unknown mount type %d for mount #%d", mountType, spellId))
+					unknownMountType[mountType] = true
+				end
 			end
 		end
 	end
-	
-	if not env.moving and not env.combat then
-		self:AddMounts(appendSpell, env, settings)
-	end
-
-	if numSpells > 0 then
-		append("\n/cast ", tconcat(spells, ";", 1, numSpells))
-	end
 end
-
-local C_MountJournal = C_MountJournal
-local lastSeen = {}
 
 local function selectBest(currentScore, currentSpell, newScore, newSpell)
 	if newScore > currentScore or (newScore == currentScore and math.random() < 0.5) then
@@ -158,44 +211,28 @@ function addon:AddMounts(append, env, settings)
 	local flyableScore, flyableSpell = 0
 	local groundScore, groundSpell = 0
 	local swimmingScore, swimmingSpell = 0
-	local now = GetTime()
 
-	for index = 1, C_MountJournal.GetNumMounts() do
-		local name, spellId, _, active, isUsable, _, isFavorite, _, _, hideOnChar, isCollected = C_MountJournal.GetMountInfo(index)
-		if isUsable and isCollected and isFavorite and not hideOnChar then
-			local _, _, _, _, mountType = C_MountJournal.GetMountInfoExtra(index)
-			local age = 25
-			if active then
-				lastSeen[spellId] = now
-				age = 0
-			elseif lastSeen[spellId] then
-				age = (0.0 + lastSeen[spellId] - now) / 1000.0
-			end
-			if mountType == 230 or mountType == 241 then
-				-- Ground and Ahn'Qiraj mounts
-				groundScore, groundSpell = selectBest(groundScore, groundSpell, 100+age, spellId)
-			end
-			if mountType == 231 then
-				-- Riding Turtle and Sea Turtle
-				swimmingScore, swimmingSpell = selectBest(swimmingScore, swimmingSpell, 300+age, spellId)
-			end
-			if mountType == 232 or mountType == 254 then
-				-- Seahorses
-				swimmingScore, swimmingSpell = selectBest(swimmingScore, swimmingSpell, 450+age, spellId)
-			end
-			if mountType == 248 then
-				-- Flying mounts
-				groundScore, groundSpell = selectBest(groundScore, groundSpell, 100+age, spellId)
-				flyableScore, flyableSpell = selectBest(flyableScore, flyableSpell, 310+age, spellId)
-			end
+	for spellId, groundSpeed, flyingSpeed, swimmingSpeed in self:IterateMounts(env, settings) do
+		if groundSpeed then
+			groundScore, groundSpell = selectBest(groundScore, groundSpell, groundSpeed, spellId)
+		end
+		if flyingSpeed then
+			flyableScore, flyableSpell = selectBest(flyableScore, flyableSpell, flyingSpeed, spellId)
+		end
+		if swimmingSpeed then
+			swimmingScore, swimmingSpell = selectBest(swimmingScore, swimmingSpell, swimmingSpeed, spellId)
 		end
 	end
-	
+
+	if groundScore > 0 or swimmingScore > 0 or flyableScore > 0 then
+		append("\n/cast ")
+	end
+
 	if swimmingScore > 0 and swimmingSpell ~= groundSpell then
-		append("[swimming]"..GetSpellInfo(swimmingSpell))
+		append("[swimming]", (GetSpellInfo(swimmingSpell)), ";")
 	end
 	if flyableScore > 0 and flyableSpell ~= groundSpell then
-		append("[flyable]"..GetSpellInfo(flyableSpell))
+		append("[flyable,nomod:shift]", (GetSpellInfo(flyableSpell)), ";")
 	end
 	if groundScore > 0 then
 		append((GetSpellInfo(groundSpell)))
