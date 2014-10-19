@@ -44,8 +44,8 @@ local theButton = CreateFrame("Button", BUTTON_NAME, nil, "SecureActionButtonTem
 
 theButton:RegisterForClicks("AnyUp")
 theButton:SetScript("PreClick", function(_, button)
-	if theButton:CanChangeAttribute() and button ~= "dismount" then
-		addon:UpdateAction(theButton, button)
+	if theButton:CanChangeAttribute() then
+		addon:UpdateAction(theButton, button == "dismount" and "dismount" or "mount")
 	end
 end)
 
@@ -94,5 +94,7 @@ local settings = {}
 function addon:UpdateAction(widget, button)
 	env.moving = GetUnitSpeed("player") > 0 or IsFalling()
 	env.combat = button == "combat" or InCombatLockdown()
-	widget:SetAttribute("macrotext", addon:BuildMacro(env, settings))
+	env.indoors = IsIndoors()
+	env.canMount = not (env.moving or env.combat or env.indoors)
+	widget:SetAttribute("macrotext", addon:BuildMacro(button, env, settings))
 end

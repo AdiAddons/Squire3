@@ -49,7 +49,7 @@ do
 		end
 	end
 
-	function addon:BuildMacro(env, settings)
+	function addon:BuildMacro(button, env, settings)
 		numParts = 0
 
 		self:AddSafetyStop(append, env, settings)
@@ -57,12 +57,21 @@ do
 
 		append("\n/leavevehicle [canexitvehicle]")
 		append("\n/dismount [mounted]")
-		
-		self:AddStopMacro(append, env, settings)
-		self:AddCasts(append, env, settings)
-		
+
+		if button ~= "dismount" then
+			self:AddStopMacro(append, env, settings)
+
+			if env.canMount then
+				self:AddMounts(append, env, settings)
+			else
+				self:AddSpells(append, env, settings)
+			end
+		end
+
 		local macro = tconcat(parts, "", 1, numParts)
+		--@debug@
 		print(macro)
+		--@end-debug@
 		return macro
 	end
 end
