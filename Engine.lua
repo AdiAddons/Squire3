@@ -132,7 +132,7 @@ function addon:AddSafetyStop(append, env, settings)
 		append("stopmacro", format('[flying%s]', modifier))
 	end
 	if not cancel.vehicle then
-		append("stopmacro", format('[canexitvehicle%s]', modifier))
+		append("stopmacro", format('[vehicleui,canexitvehicle%s]', modifier))
 	end
 	if not cancel.dismount then
 		append("stopmacro", format('[mounted%s]', modifier))
@@ -159,7 +159,13 @@ function addon:AddCancels(append, env, settings)
 		end
 	end
 	if cancelForm then
-		append("cancelform")
+		append("cancelform", "[form]")
+	end
+	if settings.cancel.vehicle then
+		append("leavevehicle", "[vehicleui,canexitvehicule]")
+	end
+	if settings.cancel.mount then
+		append("dismount", "[mounted]")
 	end
 end
 
