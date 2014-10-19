@@ -53,9 +53,9 @@ addon.specialSpells = specialSpells
 --------------------------------------------------------------------------------
 
 do
-	local parts, numParts = {}
-	local currentCmd
+	local parts, numParts, currentCmd, done = {}
 
+	-- Record all commands
 	local function append(cmd, head, ...)
 		if cmd ~= currentCmd then
 			numParts = numParts + 1
@@ -72,26 +72,39 @@ do
 		end
 	end
 
+	-- Stop as soon as we have a working command
+	local function liveAppend(cmd, head, ...)
+		if done then return end
+		if cmd ~= "cancelaura" and head then
+			head = SecureCmdOptionParse(head)
+		end
+		if head then
+			if cmd ~= "stopmacro" then
+				append(cmd, head)
+			end
+			if cmd ~= "cancelaura" then
+				done = true
+			end
+		end
+		if ... then
+			return liveAppend(cmd, ...)
+		end
+	end
+
+	local handlers = {
+		mount = { 'AddSafetyStop', 'AddCancels', 'AddToggleStop', 'AddMounts', 'AddSpells' },
+		dismount = { 'AddSafetyStop', 'AddCancels' },
+	}
+
 	function addon:BuildMacro(button, env, settings)
-		numParts, currentCmd = 0
+		numParts, done, currentCmd = 0, false
 
-		self:AddSafetyStop(append, env, settings)
-		self:AddCancels(append, env, settings)
-
-		if settings.cancel.vehicle then
-			append("leavevehicle")
-		end
-		if settings.cancel.mount then
-			append("dismount")
-		end
-
-		if button ~= "dismount" then
-			self:AddStopMacro(append, env, settings)
-
-			if env.canMount then
-				self:AddMounts(append, env, settings)
-			else
-				self:AddSpells(append, env, settings)
+		local append = env.combat and append or liveAppend
+		local handlers = handlers[button] or handlers.mount
+		for i, handler in ipairs(handlers) do
+			self[handler](self, append, env, settings)
+			if done then
+				break
 			end
 		end
 
@@ -169,7 +182,7 @@ function addon:AddCancels(append, env, settings)
 	end
 end
 
-function addon:AddStopMacro(append)
+function addon:AddToggleStop(append, env, settings)
 end
 
 --------------------------------------------------------------------------------
@@ -177,6 +190,7 @@ end
 --------------------------------------------------------------------------------
 
 function addon:AddSpells(append, env, settings)
+	if env.canMount then return end
 	for index, spell in ipairs(specialSpells) do
 		if IsPlayerSpell(spell.id) and settings.spells[spell.id] then
 			append("cast", format("%s!%s", spell.condition, GetSpellInfo(spell.id)))
@@ -241,6 +255,7 @@ local function selectBest(currentScore, currentSpell, newScore, newSpell)
 end
 
 function addon:AddMounts(append, env, settings)
+	if not env.canMount then return end
 	local flyableScore, flyableSpell = 0
 	local groundScore, groundSpell = 0
 	local swimmingScore, swimmingSpell = 0
