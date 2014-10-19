@@ -1,0 +1,20 @@
+## Interface: 60000
+
+## Title: Squire3 - configuration
+## Notes: Configuration panel of Squire3.
+## Author: Adirelle
+## Version: @project-version@
+## X-Date: @project-date-iso@
+## X-License: GNU General Public License version 3
+
+## Dependencies: Squire3
+
+## LoadManagers: AddonLoader
+## X-LoadOn-Slash: /squire3 /sq3
+## X-LoadOn-InterfaceOptions: Squire3
+
+..\Squire3\config.xml
+
+#@debug@
+## Version: DEV
+#@end-debug@

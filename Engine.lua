@@ -33,6 +33,7 @@ function addon:RegisterCancelSpells(id, type, purpose, more, ...)
 		return self:RegisterCancelSpells(more, ...)
 	end
 end
+addon.cancelSpells = cancelSpells
 
 --------------------------------------------------------------------------------
 -- Alternative spells
@@ -45,6 +46,7 @@ function addon:RegisterSpecialSpells(id, handler, more, ...)
 		return self:RegisterSpecialSpells(more, ...)
 	end
 end
+addon.specialSpells = specialSpells
 
 --------------------------------------------------------------------------------
 -- Main building method
@@ -92,6 +94,16 @@ end
 -- Macro part building
 --------------------------------------------------------------------------------
 
+local function GetModifierCondition(modifier, prefix)
+	if modifier == "any" then
+		return prefix..'mod'
+	elseif modifier == "none" then
+		return ""
+	else
+		return prefix..'mod:'..modifier
+	end
+end
+
 function addon:GetFormBySpellId(id)
 	for i = 1, GetNumShapeshiftForms() do
 		if id == select(5, GetShapeshiftFormInfo(i)) then
@@ -100,13 +112,21 @@ function addon:GetFormBySpellId(id)
 	end
 end
 
-function addon:AddSafetyStop(append)
-	append("\n/stopmacro [flying,nomod:shift]")
+function addon:AddSafetyStop(append, env, settings)
+	local modifier = GetModifierCondition(settings.unsafeModifier, ",no")
+	local cancel = settings.cancel
+	append("\n/stopmacro ")
+	if not cancel.flying then
+		append("[flying", modifier, "]")
+	end
+	if not cancel.vehicle then
+		append("[canexitvehicle", modifier, "]")
+	end
 	for id, spell in pairs(cancelSpells) do
-		if IsPlayerSpell(id) and spell.type == "form" and spell.purpose == "tank" then
+		if IsPlayerSpell(id) and spell.type == "form" and settings.cancel[id] then
 			local i = self:GetFormBySpellId(id)
 			if i then
-				append(";[nomod:shift,form:", i, "]")
+				append("[form:", i, modifier, "]")
 			end
 		end
 	end
@@ -138,7 +158,7 @@ end
 function addon:AddSpells(append, env, settings)
 	local first = true
 	for index, spell in ipairs(specialSpells) do
-		if IsPlayerSpell(spell.id) then
+		if IsPlayerSpell(spell.id) and settings.spells[spell.id] then
 			if first then
 				append("\n/cast ")
 				first = false
@@ -176,7 +196,7 @@ function addon:IterateMounts(env, settings)
 		while index < 0 do
 			index = index + 1
 			local spell = specialSpells[1-index]
-			if IsPlayerSpell(spell.id) then
+			if IsPlayerSpell(spell.id) and settings.spells[spell.id] then
 				local condition, groundSpeed, flyingSpeed, swimmingSpeed = spell.handler(env, settings)
 				if SecureCmdOptionParse(condition) then
 					return spell.id, groundSpeed, flyingSpeed, swimmingSpeed
@@ -229,12 +249,12 @@ function addon:AddMounts(append, env, settings)
 	end
 
 	if swimmingScore > 0 and swimmingSpell ~= groundSpell then
-		append("[swimming]", (GetSpellInfo(swimmingSpell)), ";")
+		append("[swimming]!", (GetSpellInfo(swimmingSpell)), ";")
 	end
 	if flyableScore > 0 and flyableSpell ~= groundSpell then
-		append("[flyable,nomod:shift]", (GetSpellInfo(flyableSpell)), ";")
+		append("[flyable,nomod:shift]!", (GetSpellInfo(flyableSpell)), ";")
 	end
 	if groundScore > 0 then
-		append((GetSpellInfo(groundSpell)))
+		append("!", (GetSpellInfo(groundSpell)))
 	end
 end

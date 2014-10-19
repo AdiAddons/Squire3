@@ -36,7 +36,23 @@ end
 addon.Debug = Debug
 
 --------------------------------------------------------------------------------
--- Create the secure button
+-- Default settings
+--------------------------------------------------------------------------------
+
+local DEFAULT_SETTINGS = {
+	profile = {
+		spells = { ['*'] = true },
+		cancel = {
+			['*'] = true,
+			flying = false,
+		},
+		unsafeModifier = "shift",
+		groundModifier = "ctrl",
+	}
+}
+
+--------------------------------------------------------------------------------
+-- The secure button
 --------------------------------------------------------------------------------
 
 local BUTTON_NAME = "Squire3Button"
@@ -49,33 +65,45 @@ theButton:SetScript("PreClick", function(_, button)
 	end
 end)
 
-theButton:RegisterEvent('PLAYER_REGEN_DISABLED')
-theButton:SetScript('OnEvent', function() addon:UpdateAction(theButton, "combat") end)
-
 theButton:SetAttribute('type', 'macro')
-
 theButton:SetAttribute('type-dismount', 'macro')
-theButton:SetAttribute('macrotext-dismount', "/dismount\n/cancelform\n/leavevehicle")
+
+local env = {}
+function addon:UpdateAction(widget, button)
+	env.moving = GetUnitSpeed("player") > 0 or IsFalling()
+	env.combat = button == "combat" or InCombatLockdown()
+	env.indoors = IsIndoors()
+	env.canMount = not (env.moving or env.combat or env.indoors)
+	local suffix = (button == "dismount") and "-dismount" or ""
+	widget:SetAttribute("macrotext"..suffix, addon:BuildMacro(button, env, self.db.profile))
+end
 
 addon.button = theButton
 
 --------------------------------------------------------------------------------
--- Create the macro
+-- Event handler
 --------------------------------------------------------------------------------
---[=[
-do
-	local MACRO_NAME = addonName
-	local MACRO_ICON = [[Ability_Mount_RidingHorse]]
-	local MACRO_BODY = format("/click [button:2] %s RightButton; %s", BUTTON_NAME, BUTTON_NAME)
+local eventFrame = CreateFrame("Frame")
+eventFrame:SetScript('OnEvent', function(_, event, ...) return addon[event](addon, event, ...) end)
 
-	local index = GetMacroIndexByName(MACRO_NAME)
-	if index == 0 then
-		CreateMacro(MACRO_NAME, MACRO_ICON, MACRO_BODY, 0)
-	else
-		EditMacro(index, MACRO_NAME, MACRO_ICON, MACRO_BODY)
-	end
+function addon:PLAYER_REGEN_DISABLED()
+	self:UpdateAction(theButton, "combat")
 end
---]=]
+
+function addon:ADDON_LOADED(_, name)
+	if name ~= addonName then return end
+	eventFrame:UnregisterEvent('ADDON_LOADED')
+
+	self.db = LibStub('AceDB-3.0'):New(addonName.."DB", DEFAULT_SETTINGS, true)
+end
+
+eventFrame:RegisterEvent('PLAYER_REGEN_DISABLED')
+eventFrame:RegisterEvent('ADDON_LOADED')
+
+-- Configuration loading helper
+function _G.Squire3_Load(callback)
+	return callback(addonName, addon)
+end
 
 --------------------------------------------------------------------------------
 -- Binding localization
@@ -84,17 +112,3 @@ end
 _G["BINDING_HEADER_SQUIRE3"] = addonName
 _G["BINDING_NAME_CLICK Squire3Button:LeftButton"] = addon.L["Use Squire3"]
 _G["BINDING_NAME_CLICK Squire3Button:dismount"] = addon.L["Dismount"]
-
---------------------------------------------------------------------------------
--- Updating
---------------------------------------------------------------------------------
-
-local env = {}
-local settings = {}
-function addon:UpdateAction(widget, button)
-	env.moving = GetUnitSpeed("player") > 0 or IsFalling()
-	env.combat = button == "combat" or InCombatLockdown()
-	env.indoors = IsIndoors()
-	env.canMount = not (env.moving or env.combat or env.indoors)
-	widget:SetAttribute("macrotext", addon:BuildMacro(button, env, settings))
-end

@@ -4,10 +4,12 @@
 ## Notes: One-click smart mounting.
 ## Author: Adirelle
 ## Version: @project-version@
-## SavedVariables: Squire3DB
 ## X-Date: @project-date-iso@
-## OptionalDeps: Ace3, AdiDebug
 ## X-License: GNU General Public License version 3
+
+## SavedVariables: Squire3DB
+
+## OptionalDeps: Ace3, AdiDebug
 
 #@no-lib-strip@
 libs\LibStub\LibStub.lua
