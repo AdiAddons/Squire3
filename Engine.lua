@@ -54,23 +54,36 @@ addon.specialSpells = specialSpells
 
 do
 	local parts, numParts = {}
+	local currentCmd
 
-	local function append(head, more, ...)
-		numParts = numParts + 1
-		parts[numParts] = head
-		if more then
-			return append(more, ...)
+	local function append(cmd, head, ...)
+		if cmd ~= currentCmd then
+			numParts = numParts + 1
+			parts[numParts] = "\n/"..cmd
+		end
+		if head then
+			parts[numParts+1] = currentCmd == cmd and ";" or " "
+			parts[numParts+2] = head
+			numParts = numParts + 2
+		end
+		currentCmd = cmd
+		if ... then
+			return append(cmd, ...)
 		end
 	end
 
 	function addon:BuildMacro(button, env, settings)
-		numParts = 0
+		numParts, currentCmd = 0
 
 		self:AddSafetyStop(append, env, settings)
 		self:AddCancels(append, env, settings)
 
-		append("\n/leavevehicle [canexitvehicle]")
-		append("\n/dismount [mounted]")
+		if settings.cancel.vehicle then
+			append("leavevehicle")
+		end
+		if settings.cancel.mount then
+			append("dismount")
+		end
 
 		if button ~= "dismount" then
 			self:AddStopMacro(append, env, settings)
@@ -115,36 +128,38 @@ end
 function addon:AddSafetyStop(append, env, settings)
 	local modifier = GetModifierCondition(settings.unsafeModifier, ",no")
 	local cancel = settings.cancel
-	append("\n/stopmacro ")
 	if not cancel.flying then
-		append("[flying", modifier, "]")
+		append("stopmacro", format('[flying%s]', modifier))
 	end
 	if not cancel.vehicle then
-		append("[canexitvehicle", modifier, "]")
+		append("stopmacro", format('[canexitvehicle%s]', modifier))
+	end
+	if not cancel.dismount then
+		append("stopmacro", format('[mounted%s]', modifier))
 	end
 	for id, spell in pairs(cancelSpells) do
-		if IsPlayerSpell(id) and spell.type == "form" and settings.cancel[id] then
+		if IsPlayerSpell(id) and spell.type == "form" and not settings.cancel[tostring(id)] then
 			local i = self:GetFormBySpellId(id)
 			if i then
-				append("[form:", i, modifier, "]")
+				append("stopmacro", format('[form:%d%s]', i, modifier))
 			end
 		end
 	end
 end
 
-function addon:AddCancels(append)
+function addon:AddCancels(append, env, settings)
 	local cancelForm = false
 	for id, spell in pairs(cancelSpells) do
-		if IsPlayerSpell(id) then
-			if spell.type == "form" and spell.purpose ~= "tank" then
+		if IsPlayerSpell(id) and settings.cancel[tostring(id)] then
+			if spell.type == "form" then
 				cancelForm = true
 			elseif spell.type == "aura" then
-				append("\n/cancelaura ", (GetSpellInfo(id)))
+				append("cancelaura", (GetSpellInfo(id)))
 			end
 		end
 	end
 	if cancelForm then
-		append("\n/cancelform")
+		append("cancelform")
 	end
 end
 
@@ -156,16 +171,9 @@ end
 --------------------------------------------------------------------------------
 
 function addon:AddSpells(append, env, settings)
-	local first = true
 	for index, spell in ipairs(specialSpells) do
 		if IsPlayerSpell(spell.id) and settings.spells[spell.id] then
-			if first then
-				append("\n/cast ")
-				first = false
-			else
-				append(";")
-			end
-			append((spell.handler(env, settings) or ""), (GetSpellInfo(spell.id)))
+			append("cast", format("%s!%s", spell.handler(env, settings) or "", GetSpellInfo(spell.id)))
 		end
 	end
 end
@@ -179,8 +187,8 @@ local mountTypeSpeeds = {
 	[231] = {nil, nil, 100}, -- Riding Turtle and Sea Turtle
 	[232] = {nil, nil, 450}, -- Vashj'ir Seahorse
 	[241] = {100, nil, nil}, -- Ahn'Qiraj mounts
-	[247] = {100, 310, nil}, -- Red Flying Cloud
-	[248] = {100, 310, nil}, -- Flying mounts
+	[247] = { 98, 310, nil}, -- Red Flying Cloud
+	[248] = { 98, 310, nil}, -- Flying mounts
 	[254] = {nil, nil, 450}, -- Subdued Seahorse
 	[269] = {100, nil, nil}, -- Water striders
 }
@@ -244,17 +252,13 @@ function addon:AddMounts(append, env, settings)
 		end
 	end
 
-	if groundScore > 0 or swimmingScore > 0 or flyableScore > 0 then
-		append("\n/cast ")
-	end
-
 	if swimmingScore > 0 and swimmingSpell ~= groundSpell then
-		append("[swimming]!", (GetSpellInfo(swimmingSpell)), ";")
+		append("cast", format("[swimming]!%s", GetSpellInfo(swimmingSpell)))
 	end
 	if flyableScore > 0 and flyableSpell ~= groundSpell then
-		append("[flyable,nomod:shift]!", (GetSpellInfo(flyableSpell)), ";")
+		append("cast", format("[flyable%s]!%s", GetModifierCondition(settings.groundModifier, ",no"), GetSpellInfo(flyableSpell)))
 	end
 	if groundScore > 0 then
-		append("!", (GetSpellInfo(groundSpell)))
+		append("cast", "!"..GetSpellInfo(groundSpell))
 	end
 end
