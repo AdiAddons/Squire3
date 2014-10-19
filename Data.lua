@@ -52,10 +52,6 @@ if isA("DRUID") then
 end
 
 if isA("HUNTER") then
-	addon:RegisterCancelSpells(
-		 5118, "aura", "travel", -- Aspect of the Cheetah
-		13159, "aura", "travel"  -- Aspect of the Pack
-	)
 	addon:RegisterSpecialSpells(
 		-- Aspect of the Cheetah
 		5118, function(env) return "", 30 end
