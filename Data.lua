@@ -40,8 +40,8 @@ if isA("DRUID") then
 		114282, "aura"  -- Treant form
 	)
 	addon:RegisterSpecialSpells(
-		783, "[nocombat,outdoors]", 100, 310, 100, -- Travel form
-		768, "", 30, nil, nil                      -- Cat form
+		783, "[nocombat,outdoors]", 100, 310, 85, -- Travel form
+		768, "", 30, nil, nil                     -- Cat form
 	)
 end
 

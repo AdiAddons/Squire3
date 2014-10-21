@@ -222,7 +222,7 @@ end
 
 local mountTypeSpeeds = {
 	[230] = {100, nil, nil}, -- Ground mounts
-	[231] = {nil, nil, 100}, -- Riding Turtle and Sea Turtle
+	[231] = {nil, nil,  50}, -- Riding Turtle and Sea Turtle
 	[232] = {nil, nil, 450}, -- Vashj'ir Seahorse
 	[241] = {100, nil, nil}, -- Ahn'Qiraj mounts
 	[247] = { 98, 310, nil}, -- Red Flying Cloud
