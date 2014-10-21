@@ -206,7 +206,12 @@ function addon:AddSpells(append, env, settings)
 	if env.canMount then return end
 	for index, spell in ipairs(specialSpells) do
 		if IsPlayerSpell(spell.id) and settings.spells[spell.id] then
-			append("cast", format("%s!%s", spell.condition, GetSpellInfo(spell.id)))
+			local condition = spell.condition
+			local _, pos = strfind(condition, "flyable")
+			if pos then
+				condition = strsub(condition, 1, pos)..GetModifierCondition(settings.groundModifier, ",no")..strsub(condition, pos)
+			end
+			append("cast", format("%s!%s", condition, GetSpellInfo(spell.id)))
 		end
 	end
 end
