@@ -173,7 +173,7 @@ function addon:AddCancels(append, env, settings)
 		append("cancelform", "[form]")
 	end
 	if settings.cancel.vehicle then
-		append("leavevehicle", "[vehicleui,canexitvehicule]")
+		append("leavevehicle", "[vehicleui,canexitvehicle]")
 	end
 	if settings.cancel.mount then
 		append("dismount", "[mounted]")
@@ -183,7 +183,7 @@ end
 function addon:AddToggleStop(append, env, settings)
 	if not settings.toggleMode then return end
 	if settings.cancel.vehicle then
-		append("stopmacro", "[vehicleui,canexitvehicule]")
+		append("stopmacro", "[vehicleui,canexitvehicle]")
 	end
 	if settings.cancel.mount then
 		append("stopmacro", "[mounted]")
