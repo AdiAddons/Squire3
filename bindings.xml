@@ -1,8 +1,8 @@
 <Bindings>
-    <Binding name="CLICK Squire3Button:LeftButton" header="SQUIRE3">
+    <Binding name="CLICK Squire3Button:LeftButton" header="SQUIRE3" category="ADDONS">
         -- Do the job !
     </Binding>
-    <Binding name="CLICK Squire3Button:dismount">
+    <Binding name="CLICK Squire3Button:dismount" category="ADDONS">
         -- Do the job !
     </Binding>
 </Bindings>
