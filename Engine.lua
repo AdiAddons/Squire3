@@ -264,39 +264,53 @@ function addon:IterateMounts(env, settings)
 	end
 end
 
-local function selectBest(currentScore, currentSpell, newScore, newSpell)
-	if newScore > currentScore or (newScore == currentScore and math.random() < 0.5) then
-		return newScore, newSpell
-	else
-		return currentScore, currentSpell
+local function updateContext(context, id, speed)
+	if not speed then
+		return
 	end
+	if not context.speed then
+		context.speed = 0
+	end
+	if speed < context.speed then
+		return
+	end
+	if speed > context.speed then
+		context.ids = {}
+		context.speed = speed
+	end
+	table.insert(context.ids, id)
+end
+
+local function randomIdFromContext(context)
+	if not context.ids then
+		return nil
+	end
+	return context.ids[math.random(1, #context.ids)]
 end
 
 function addon:AddMounts(append, env, settings)
 	if not env.canMount then return end
-	local flyableScore, flyableSpell = 0
-	local groundScore, groundSpell = 0
-	local swimmingScore, swimmingSpell = 0
+	local flyingContext = {}
+	local groundContext = {}
+	local swimmingContext = {}
 
 	for spellId, groundSpeed, flyingSpeed, swimmingSpeed in self:IterateMounts(env, settings) do
-		if groundSpeed then
-			groundScore, groundSpell = selectBest(groundScore, groundSpell, groundSpeed, spellId)
-		end
-		if flyingSpeed then
-			flyableScore, flyableSpell = selectBest(flyableScore, flyableSpell, flyingSpeed, spellId)
-		end
-		if swimmingSpeed then
-			swimmingScore, swimmingSpell = selectBest(swimmingScore, swimmingSpell, swimmingSpeed, spellId)
-		end
+		updateContext(flyingContext, spellId, flyingSpeed)
+		updateContext(groundContext, spellId, groundSpeed)
+		updateContext(swimmingContext, spellId, swimmingSpeed)
 	end
 
-	if swimmingScore > 0 and swimmingSpell ~= groundSpell then
+	local flyingSpell = randomIdFromContext(flyingContext)
+	local groundSpell = randomIdFromContext(groundContext)
+	local swimmingSpell = randomIdFromContext(swimmingContext)
+
+	if swimmingSpell and swimmingSpell ~= groundSpell then
 		append("cast", format("[swimming]!%s", GetSpellInfo(swimmingSpell)))
 	end
-	if flyableScore > 0 and flyableSpell ~= groundSpell then
-		append("cast", format("[flyable%s]!%s", GetModifierCondition(settings.groundModifier, ",no"), GetSpellInfo(flyableSpell)))
+	if flyingSpell and flyingSpell ~= groundSpell then
+		append("cast", format("[flyable%s]!%s", GetModifierCondition(settings.groundModifier, ",no"), GetSpellInfo(flyingSpell)))
 	end
-	if groundScore > 0 then
+	if groundSpell then
 		append("cast", "!"..GetSpellInfo(groundSpell))
 	end
 end
