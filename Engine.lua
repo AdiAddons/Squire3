@@ -209,7 +209,7 @@ function addon:AddSpells(append, env, settings)
 			local condition = spell.condition
 			local _, pos = strfind(condition, "flyable")
 			if pos then
-				condition = strsub(condition, 1, pos)..GetModifierCondition(settings.groundModifier, ",no")..strsub(condition, pos)
+				condition = strsub(condition, 1, pos)..GetModifierCondition(settings.groundModifier, ",no")..strsub(condition, pos+1)
 			end
 			append("cast", format("%s!%s", condition, GetSpellInfo(spell.id)))
 		end
