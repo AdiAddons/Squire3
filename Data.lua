@@ -37,11 +37,13 @@ if isA("DRUID") then
 		   783, "form", -- Travel form
 		  5487, "form", -- Bear form
 		 24858, "form", -- Moonkin form
-		114282, "aura"  -- Treant form
+		114282, "aura", -- Treant form
+		165962, "form"  -- Flying form
 	)
 	addon:RegisterSpecialSpells(
-		783, "[nocombat,outdoors]", 100, 310, 85, -- Travel form
-		768, "", 30, nil, nil                     -- Cat form
+		165962, "[flyable,nocombat,outdoors]",  98, 310, nil, -- Flying form
+		   783, "[nocombat,outdoors]",         100, 308,  85, -- Travel form
+		   768, "",                             30, nil, nil  -- Cat form
 	)
 end
 
