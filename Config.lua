@@ -119,6 +119,12 @@ Squire3_Load(function(addonName, addon)
 							type = 'toggle',
 							order = 5,
 						},
+						perCharFavorites = {
+							name = L['Per character favorites'],
+							desc = L["When enabled, Squire3 will save and restore favorite mounts per character."],
+							type = 'toggle',
+							order = 8,
+						},
 						spells = {
 							name = L['Use spells'],
 							desc = L['Select which spells Squire3 should use.'],

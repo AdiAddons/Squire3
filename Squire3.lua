@@ -49,6 +49,12 @@ local DEFAULT_SETTINGS = {
 		unsafeModifier = "shift",
 		groundModifier = "ctrl",
 		toggleMode = false,
+		perCharFavorites = false,
+	},
+	char = {
+		favorites = {
+			['*'] = false
+		}
 	}
 }
 
@@ -96,6 +102,9 @@ function addon:ADDON_LOADED(_, name)
 	eventFrame:UnregisterEvent('ADDON_LOADED')
 
 	self.db = LibStub('AceDB-3.0'):New(addonName.."DB", DEFAULT_SETTINGS, true)
+
+	self:RestoreFavorites()
+	self.db.RegisterCallback(self, 'OnDatabaseShutdown', function() return self:SaveFavorites() end)
 end
 
 eventFrame:RegisterEvent('PLAYER_REGEN_DISABLED')
@@ -104,6 +113,33 @@ eventFrame:RegisterEvent('ADDON_LOADED')
 -- Configuration loading helper
 function _G.Squire3_Load(callback)
 	return callback(addonName, addon)
+end
+
+--------------------------------------------------------------------------------
+-- Per character favorites
+--------------------------------------------------------------------------------
+
+function addon:SaveFavorites()
+	if not self.db.profile.perCharFavorites then
+		return
+	end
+	for index = 1, C_MountJournal.GetNumMounts() do
+		local _, spellId, _, _, _, _, isFavorite = C_MountJournal.GetMountInfo(index)
+		self.db.char.favorites[spellId] = isFavorite
+	end
+end
+
+function addon:RestoreFavorites()
+	if not self.db.profile.perCharFavorites then
+		return
+	end
+	for index = 1, C_MountJournal.GetNumMounts() do
+		local _, spellId, _, _, _, _, isFavorite = C_MountJournal.GetMountInfo(index)
+		local saved = self.db.char.favorites[spellId]
+		if saved ~= nil and saved ~= isFavorite then
+			C_MountJournal.SetIsFavorite(index, saved)
+		end
+	end
 end
 
 --------------------------------------------------------------------------------
