@@ -96,25 +96,6 @@ do
 		end
 	end
 
-	-- Stop as soon as we have a working command
-	local function liveAppend(cmd, head, ...)
-		if done then return end
-		if cmd ~= "cancelaura" and head then
-			head = SecureCmdOptionParse(head)
-		end
-		if head then
-			if cmd ~= "stopmacro" then
-				append(cmd, head)
-			end
-			if cmd ~= "cancelaura" then
-				done = true
-			end
-		end
-		if ... then
-			return liveAppend(cmd, ...)
-		end
-	end
-
 	local handlers = {
 		mount = { 'AddSafetyStop', 'AddToggleStop', 'AddMounts', 'AddSpells', 'AddCancels' },
 		dismount = { 'AddSafetyStop', 'AddCancels' },
@@ -123,7 +104,6 @@ do
 	function addon:BuildMacro(button, env, settings)
 		numParts, done, currentCmd = 0, false
 
-		local append = env.combat and append or liveAppend
 		local handlers = handlers[button] or handlers.mount
 		for i, handler in ipairs(handlers) do
 			self[handler](self, append, env, settings)
