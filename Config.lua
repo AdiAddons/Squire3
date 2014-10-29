@@ -34,7 +34,7 @@ Squire3_Load(function(addonName, addon)
 
 			local index = GetMacroIndexByName(MACRO_NAME)
 			if index == 0 then
-				CreateMacro(MACRO_NAME, MACRO_ICON, MACRO_BODY, 0)
+				CreateMacro(MACRO_NAME, MACRO_ICON, MACRO_BODY)
 			else
 				EditMacro(index, MACRO_NAME, MACRO_ICON, MACRO_BODY)
 			end
