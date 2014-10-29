@@ -268,16 +268,17 @@ local function updateContext(context, id, speed)
 	if not speed or speed < context.speed then
 		return
 	end
-	context.speed = speed
-	tinsert(context.ids, id)
+	if speed > context.speed then
+		context.speed, context.count = speed, 0
+	end
+	context.count = context.count + 1
+	context.ids[context.count] = id
 end
 
 local function randomIdFromContext(context)
-	local numMounts = #context.ids
-	if numMounts < 1 then
-		return
+	if context.count > 0 then
+		return context.ids[math.random(1, context.count)]
 	end
-	return context.ids[math.random(1, numMounts)]
 end
 
 local flyingContext = { ids = {} }
@@ -286,7 +287,7 @@ local swimmingContext = { ids = {} }
 
 function addon:AddMounts(append, env, settings)
 	if not env.canMount then return end
-	wipe(flyingContext.ids, groundContext.ids, swimmingContext.ids)
+	flyingContext.count, groundContext.count, swimmingContext.count = 0, 0, 0
 	flyingContext.speed, groundContext.speed, swimmingContext.speed = 0, 0, 0
 
 	for spellId, groundSpeed, flyingSpeed, swimmingSpeed in self:IterateMounts(env, settings) do
