@@ -49,6 +49,30 @@ end
 addon.specialSpells = specialSpells
 
 --------------------------------------------------------------------------------
+-- Handle forms
+--------------------------------------------------------------------------------
+
+local forms = {}
+function addon:GetCancelFormCondition(cancel, reverse)
+	reverse = reverse or false
+	local count, numForms = 0, GetNumShapeshiftForms()
+	for index = 1, numForms do
+		local spellId = select(5, GetShapeshiftFormInfo(index))
+		if cancel[tostring(spellId)] ~= reverse then
+			count = count + 1
+			forms[count] = index
+		end
+	end
+	if count == numForms then
+		return "form"
+	end
+	if count > 0 then
+		return "form:"..table.concat(forms, "/", 1, count)
+	end
+	return false
+end
+
+--------------------------------------------------------------------------------
 -- Main building method
 --------------------------------------------------------------------------------
 
@@ -92,7 +116,7 @@ do
 	end
 
 	local handlers = {
-		mount = { 'AddSafetyStop', 'AddCancels', 'AddToggleStop', 'AddMounts', 'AddSpells' },
+		mount = { 'AddSafetyStop', 'AddToggleStop', 'AddMounts', 'AddSpells', 'AddCancels' },
 		dismount = { 'AddSafetyStop', 'AddCancels' },
 	}
 
@@ -128,14 +152,6 @@ local function GetModifierCondition(modifier, prefix)
 	end
 end
 
-function addon:GetFormBySpellId(id)
-	for i = 1, GetNumShapeshiftForms() do
-		if id == select(5, GetShapeshiftFormInfo(i)) then
-			return i
-		end
-	end
-end
-
 function addon:AddSafetyStop(append, env, settings)
 	local modifier = GetModifierCondition(settings.unsafeModifier, ",no")
 	local cancel = settings.cancel
@@ -148,29 +164,21 @@ function addon:AddSafetyStop(append, env, settings)
 	if not cancel.dismount then
 		append("stopmacro", format('[mounted%s]', modifier))
 	end
-	for id, type in pairs(cancelSpells) do
-		if IsPlayerSpell(id) and type == "form" and not settings.cancel[tostring(id)] then
-			local i = self:GetFormBySpellId(id)
-			if i then
-				append("stopmacro", format('[form:%d%s]', i, modifier))
-			end
-		end
+	local cancelForms = self:GetCancelFormCondition(settings.cancel, true)
+	if cancelForms then
+		append("stopmacro", format('[%s%s]', cancelForms, modifier))
 	end
 end
 
 function addon:AddCancels(append, env, settings)
-	local cancelForm = false
 	for id, type in pairs(cancelSpells) do
-		if IsPlayerSpell(id) and settings.cancel[tostring(id)] then
-			if type == "form" then
-				cancelForm = true
-			elseif type == "aura" then
-				append("cancelaura", (GetSpellInfo(id)))
-			end
+		if IsPlayerSpell(id) and type == "aura" and settings.cancel[tostring(id)] then
+			append("cancelaura", (GetSpellInfo(id)))
 		end
 	end
-	if cancelForm then
-		append("cancelform", "[form]")
+	local cancelForms = self:GetCancelFormCondition(settings.cancel)
+	if cancelForms then
+		append("cancelform", '['..cancelForms..']')
 	end
 	if settings.cancel.vehicle then
 		append("leavevehicle", "[vehicleui,canexitvehicle]")
@@ -183,18 +191,14 @@ end
 function addon:AddToggleStop(append, env, settings)
 	if not settings.toggleMode then return end
 	if settings.cancel.vehicle then
-		append("stopmacro", "[vehicleui,canexitvehicle]")
+		append("cast", "[vehicleui,canexitvehicle]")
 	end
 	if settings.cancel.mount then
-		append("stopmacro", "[mounted]")
+		append("cast", "[mounted]")
 	end
-	for id, type in pairs(cancelSpells) do
-		if IsPlayerSpell(id) and type == "form" and not settings.cancel[tostring(id)] then
-			local i = self:GetFormBySpellId(id)
-			if i then
-				append("stopmacro", format('[form:%d]', i))
-			end
-		end
+	local cancelForms = self:GetCancelFormCondition(settings.cancel)
+	if cancelForms then
+		append("cast", '['..cancelForms..']')
 	end
 end
 
