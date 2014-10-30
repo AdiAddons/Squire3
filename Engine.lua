@@ -234,7 +234,7 @@ function addon:AddSpells(append, env, settings)
 	for index, spell in ipairs(specialSpells) do
 		if IsPlayerSpell(spell.id) and settings.spells[spell.id] then
 			local condition = spell.condition
-			local _, pos = strfind(condition, "flyable")
+			local _, pos = strfind(condition, "%Aflyable")
 			if pos then
 				condition = strsub(condition, 1, pos)..GetModifierCondition(settings.groundModifier, ",no")..strsub(condition, pos+1)
 			end

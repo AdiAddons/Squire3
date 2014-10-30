@@ -42,10 +42,10 @@ if isA("DRUID") then
 	)
 	addon:RegisterSpecialSpells(
 		-- Note: order matters when moving, e.g. first match wins
-		   783, "[swimming,nocombat,outdoors]", nil, nil,  85, -- Travel form underwater
-		165962, "[flyable,nocombat,outdoors]",   98, 310, nil, -- Flying form
-		   783, "[nocombat,outdoors]",          100, 308,  85, -- Travel form
-		   768, "",                              30, nil, nil  -- Cat form
+		   783, "[swimming,outdoors][noflyable,outdoors][combat,outdoors]",  40, nil,  85, -- Travel form
+		165962, "[flyable,nocombat,outdoors]",                               98, 310, nil, -- Flying form
+		   783, "[nocombat,outdoors]",                                      100, 308,  85, -- Travel form
+		   768, "",                                                          30, nil, nil  -- Cat form
 	)
 end
 
