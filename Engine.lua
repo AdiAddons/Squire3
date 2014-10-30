@@ -152,7 +152,7 @@ end
 
 function addon:AddCancels(append, env, settings)
 	for id, type in pairs(cancelSpells) do
-		if IsPlayerSpell(id) and type == "aura" and settings.cancel[tostring(id)] then
+		if IsPlayerSpell(id) and type == "aura" and settings.cancel[tostring(id)] and not settings.toggleMode then
 			append("cancelaura", (GetSpellInfo(id)))
 		end
 	end
@@ -238,7 +238,8 @@ function addon:AddSpells(append, env, settings)
 			if pos then
 				condition = strsub(condition, 1, pos)..GetModifierCondition(settings.groundModifier, ",no")..strsub(condition, pos+1)
 			end
-			append("cast", format("%s!%s", condition, GetSpellInfo(spell.id)))
+			local ensure = settings.toggleMode and "" or "!"
+			append("cast", format("%s%s%s", condition, ensure, GetSpellInfo(spell.id)))
 		end
 	end
 end
@@ -303,13 +304,14 @@ function addon:AddMounts(append, env, settings)
 	local groundSpell = contexts.ground:GetRandom()
 	local swimmingSpell = contexts.swimming:GetRandom()
 
+	local ensure = settings.toggleMode and "" or "!"
 	if swimmingSpell and swimmingSpell ~= groundSpell then
-		append("cast", format("[swimming]!%s", GetSpellInfo(swimmingSpell)))
+		append("cast", format("[swimming]%s%s", ensure, GetSpellInfo(swimmingSpell)))
 	end
 	if flyingSpell and flyingSpell ~= groundSpell then
-		append("cast", format("[flyable%s]!%s", GetModifierCondition(settings.groundModifier, ",no"), GetSpellInfo(flyingSpell)))
+		append("cast", format("[flyable%s]%s%s", GetModifierCondition(settings.groundModifier, ",no"), ensure, GetSpellInfo(flyingSpell)))
 	end
 	if groundSpell then
-		append("cast", "!"..GetSpellInfo(groundSpell))
+		append("cast", ensure..GetSpellInfo(groundSpell))
 	end
 end
