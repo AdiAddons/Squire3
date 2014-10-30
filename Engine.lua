@@ -183,6 +183,49 @@ function addon:AddToggleStop(append, env, settings)
 end
 
 --------------------------------------------------------------------------------
+-- Selection contexts
+--------------------------------------------------------------------------------
+
+local context_mt = { __index = {
+	Reset = function(self)
+		self.speed, self.count = 0, 0
+	end,
+	Update = function(self, id, speed)
+		if not speed or speed < self.speed then
+			return
+		end
+		if speed > self.speed then
+			self.speed, self.count = speed, 0
+		end
+		self.count = self.count + 1
+		self.ids[self.count] = id
+	end,
+	GetRandom = function(self)
+		if self.count > 0 then
+			return self.ids[math.random(1, self.count)]
+		end
+	end
+}}
+
+local contexts = {
+	ground   = setmetatable({ ids = {} }, context_mt),
+	flying   = setmetatable({ ids = {} }, context_mt),
+	swimming = setmetatable({ ids = {} }, context_mt),
+
+	Reset = function(self)
+		self.ground:Reset()
+		self.flying:Reset()
+		self.swimming:Reset()
+	end,
+
+	Update = function(self, id, groundSpeed, flyingSpeed, swimmingSpeed)
+		self.ground:Update(id, groundSpeed)
+		self.flying:Update(id, flyingSpeed)
+		self.swimming:Update(id, swimmingSpeed)
+	end
+}
+
+--------------------------------------------------------------------------------
 -- Combat spell part
 --------------------------------------------------------------------------------
 
@@ -248,41 +291,17 @@ function addon:IterateMounts(env, settings)
 	end
 end
 
-local function updateContext(context, id, speed)
-	if not speed or speed < context.speed then
-		return
-	end
-	if speed > context.speed then
-		context.speed, context.count = speed, 0
-	end
-	context.count = context.count + 1
-	context.ids[context.count] = id
-end
-
-local function randomIdFromContext(context)
-	if context.count > 0 then
-		return context.ids[math.random(1, context.count)]
-	end
-end
-
-local flyingContext = { ids = {} }
-local groundContext = { ids = {} }
-local swimmingContext = { ids = {} }
-
 function addon:AddMounts(append, env, settings)
 	if not env.canMount then return end
-	flyingContext.count, groundContext.count, swimmingContext.count = 0, 0, 0
-	flyingContext.speed, groundContext.speed, swimmingContext.speed = 0, 0, 0
+	contexts:Reset()
 
 	for spellId, groundSpeed, flyingSpeed, swimmingSpeed in self:IterateMounts(env, settings) do
-		updateContext(flyingContext, spellId, flyingSpeed)
-		updateContext(groundContext, spellId, groundSpeed)
-		updateContext(swimmingContext, spellId, swimmingSpeed)
+		contexts:Update(spellId, groundSpeed, flyingSpeed, swimmingSpeed)
 	end
 
-	local flyingSpell = randomIdFromContext(flyingContext)
-	local groundSpell = randomIdFromContext(groundContext)
-	local swimmingSpell = randomIdFromContext(swimmingContext)
+	local flyingSpell = contexts.flying:GetRandom()
+	local groundSpell = contexts.ground:GetRandom()
+	local swimmingSpell = contexts.swimming:GetRandom()
 
 	if swimmingSpell and swimmingSpell ~= groundSpell then
 		append("cast", format("[swimming]!%s", GetSpellInfo(swimmingSpell)))
