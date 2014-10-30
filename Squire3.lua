@@ -103,12 +103,19 @@ function addon:ADDON_LOADED(_, name)
 
 	self.db = LibStub('AceDB-3.0'):New(addonName.."DB", DEFAULT_SETTINGS, true)
 
-	self:RestoreFavorites()
 	self.db.RegisterCallback(self, 'OnDatabaseShutdown', function() return self:SaveFavorites() end)
+
+	eventFrame:RegisterEvent('COMPANION_UPDATE')
 end
 
 eventFrame:RegisterEvent('PLAYER_REGEN_DISABLED')
 eventFrame:RegisterEvent('ADDON_LOADED')
+
+function addon:COMPANION_UPDATE(event, type)
+	if type == "CRITTER" then return end
+	eventFrame:UnregisterEvent('COMPANION_UPDATE')
+	self:RestoreFavorites()
+end
 
 -- Configuration loading helper
 function _G.Squire3_Load(callback)
@@ -135,8 +142,8 @@ function addon:RestoreFavorites()
 	end
 	for index = 1, C_MountJournal.GetNumMounts() do
 		local _, spellId, _, _, _, _, isFavorite = C_MountJournal.GetMountInfo(index)
-		local saved = self.db.char.favorites[spellId]
-		if saved ~= nil and saved ~= isFavorite then
+		local saved = self.db.char.favorites[spellId] or false
+		if saved ~= isFavorite then
 			C_MountJournal.SetIsFavorite(index, saved)
 		end
 	end
