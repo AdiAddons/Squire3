@@ -74,3 +74,9 @@ if isA("SHAMAN") then
 		2645, "", 30, nil, nil -- Ghost Wolf
 	)
 end
+
+if isA("PRIEST") then
+	addon:RegisterCancelSpells(
+		15473, "form" -- Shadowform
+	)
+end
