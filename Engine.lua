@@ -63,13 +63,13 @@ function addon:GetCancelFormCondition(cancel, reverse)
 			forms[count] = index
 		end
 	end
+	if count == 0 then
+		return false
+	end
 	if count == numForms then
 		return "form"
 	end
-	if count > 0 then
-		return "form:"..table.concat(forms, "/", 1, count)
-	end
-	return false
+	return "form:"..table.concat(forms, "/", 1, count)
 end
 
 --------------------------------------------------------------------------------
