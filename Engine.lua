@@ -79,20 +79,20 @@ end
 do
 	local parts, numParts, currentCmd, done = {}
 
-	-- Record all commands
-	local function append(cmd, head, ...)
-		if cmd ~= currentCmd then
-			numParts = numParts + 1
-			parts[numParts] = "\n/"..cmd
+	local function doAppend(cmd, arg)
+		if cmd == currentCmd then
+			parts[numParts+1] = ";"
+		else
+			parts[numParts+1] = "\n/"..cmd.." "
+			currentCmd = cmd
 		end
-		if head then
-			parts[numParts+1] = currentCmd == cmd and ";" or " "
-			parts[numParts+2] = head
-			numParts = numParts + 2
-		end
-		currentCmd = cmd
-		if ... then
-			return append(cmd, ...)
+		parts[numParts+2] = arg
+		numParts = numParts + 2
+	end
+
+	local function append(cmd, arg, ...)
+		if arg then
+			return doAppend(cmd, arg), append(cmd, ...)
 		end
 	end
 
