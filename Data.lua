@@ -38,14 +38,15 @@ if isA("DRUID") then
 		  5487, "form", -- Bear form
 		 24858, "form", -- Moonkin form
 		114282, "aura", -- Treant form
-		165962, "form"  -- Flying form
+		165962, "form"  -- Flight form
 	)
 	addon:RegisterSpecialSpells(
 		-- Note: order matters when moving, e.g. first match wins
-		   783, "[swimming,outdoors][noflyable,outdoors][combat,outdoors]",  40, nil,  85, -- Travel form
-		165962, "[flyable,nocombat,outdoors]",                               98, 310, nil, -- Flying form
-		   783, "[nocombat,outdoors]",                                      100, 308,  85, -- Travel form
-		   768, "",                                                          30, nil, nil  -- Cat form
+		   783, "[swimming,outdoors]",                   nil, nil,  85, -- Swimming travel form
+		   783, "[noflyable,outdoors][combat,outdoors]",  40, nil, nil, -- Ground travel form
+		165962, "[flyable,nocombat,outdoors]",            98, 310, nil, -- Flight form
+		   783, "[flyable,nocombat,outdoors]",            98, 308, nil, -- Flying travel form
+		   768, "",                                       30, nil, nil  -- Cat form
 	)
 end
 
