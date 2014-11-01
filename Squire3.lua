@@ -97,9 +97,11 @@ function addon:PLAYER_REGEN_DISABLED()
 	self:UpdateAction(theButton, "combat")
 end
 
-function addon:ADDON_LOADED(_, name)
+function addon:ADDON_LOADED(event, name)
+	if name == "Blizzard_PetJournal" then
+		return self:COMPANION_UPDATE(event)
+	end
 	if name ~= addonName then return end
-	eventFrame:UnregisterEvent('ADDON_LOADED')
 
 	self.db = LibStub('AceDB-3.0'):New(addonName.."DB", DEFAULT_SETTINGS, true)
 
@@ -113,6 +115,7 @@ eventFrame:RegisterEvent('ADDON_LOADED')
 
 function addon:COMPANION_UPDATE(event, type)
 	if type == "CRITTER" then return end
+	addon:Debug(event, type)
 	eventFrame:UnregisterEvent('COMPANION_UPDATE')
 	self:RestoreFavorites()
 end
@@ -145,6 +148,7 @@ function addon:RestoreFavorites()
 		local saved = self.db.char.favorites[spellId] or false
 		if saved ~= isFavorite then
 			C_MountJournal.SetIsFavorite(index, saved)
+			self:Debug("Restored favorite status of", GetSpellInfo(spellId), "to", saved and "favorite" or "not favorite")
 		end
 	end
 end
