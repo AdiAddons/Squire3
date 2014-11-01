@@ -108,13 +108,14 @@ function addon:ADDON_LOADED(event, name)
 	self.db.RegisterCallback(self, 'OnDatabaseShutdown', function() return self:SaveFavorites() end)
 
 	eventFrame:RegisterEvent('COMPANION_UPDATE')
+	self:RestoreFavorites()
 end
 
 eventFrame:RegisterEvent('PLAYER_REGEN_DISABLED')
 eventFrame:RegisterEvent('ADDON_LOADED')
 
 function addon:COMPANION_UPDATE(event, type)
-	if type == "CRITTER" then return end
+	if type then return end
 	addon:Debug(event, type)
 	eventFrame:UnregisterEvent('COMPANION_UPDATE')
 	self:RestoreFavorites()
