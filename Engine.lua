@@ -305,10 +305,10 @@ function addon:AddMounts(append, env, settings)
 	local swimmingSpell = contexts.swimming:GetRandom()
 
 	local ensure = settings.toggleMode and "" or "!"
-	if swimmingSpell and swimmingSpell ~= groundSpell then
+	if swimmingSpell then
 		append("cast", format("[swimming]%s%s", ensure, GetSpellInfo(swimmingSpell)))
 	end
-	if flyingSpell and flyingSpell ~= groundSpell then
+	if flyingSpell then
 		append("cast", format("[flyable%s]%s%s", GetModifierCondition(settings.groundModifier, ",no"), ensure, GetSpellInfo(flyingSpell)))
 	end
 	if groundSpell then
