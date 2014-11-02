@@ -112,7 +112,9 @@ function addon:ADDON_LOADED(event, name)
 	self.db.RegisterCallback(self, 'OnDatabaseShutdown', function() return self:SaveFavorites() end)
 
 	eventFrame:RegisterEvent('COMPANION_UPDATE')
+	eventFrame:RegisterEvent('UPDATE_SHAPESHIFT_FORMS')
 	self:RestoreFavorites()
+	self:RefreshStates()
 end
 
 eventFrame:RegisterEvent('PLAYER_REGEN_DISABLED')
@@ -123,6 +125,10 @@ function addon:COMPANION_UPDATE(event, type)
 	addon:Debug(event, type)
 	eventFrame:UnregisterEvent('COMPANION_UPDATE')
 	self:RestoreFavorites()
+end
+
+function addon:UPDATE_SHAPESHIFT_FORMS()
+	self:RefreshStates()
 end
 
 -- Configuration loading helper

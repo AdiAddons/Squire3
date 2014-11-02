@@ -22,18 +22,60 @@ local addonName, addon = ...
 
 local tconcat = table.concat
 
+local L = addon.L
+
 --------------------------------------------------------------------------------
--- Spells to cancel
+-- States
 --------------------------------------------------------------------------------
 
-local cancelSpells = {}
+local states = {
+	mount = {
+		name        = L['Mounts'],
+		condition   = "mount",
+		cancelWith  = "dismount",
+		IsAvailable = function() return true end,
+	},
+	flying = {
+		name        = L['Flying'],
+		condition   = "flying",
+		IsAvailable = function() return true end,
+	},
+	vehicle = {
+		name        = L['Vehicles'],
+		condition   = "vehicleui,canexitvehicle",
+		cancelWith  = "leavevehicle",
+		IsAvailable = function() return true end,
+	}
+}
+addon.states = states
+
 function addon:RegisterCancelSpells(id, type, ...)
-	cancelSpells[id] = type
+	states[tostring(id)] = {
+		spellId     = id,
+		isForm      = type:match("form"),
+		cancelWith  = type:match("aura") and "cancelaura" or "cancelform",
+		IsAvailable = function() return IsPlayerSpell(id) end,
+	}
 	if ... then
 		return self:RegisterCancelSpells(...)
 	end
 end
-addon.cancelSpells = cancelSpells
+
+local formMap = {}
+function addon:RefreshStates()
+	wipe(formMap)
+	for index = 1, GetNumShapeshiftForms() do
+		formMap[select(5, GetShapeshiftFormInfo(index))] = index
+	end
+	for key, state in pairs(states) do
+		if state.spellId then
+			state.name = GetSpellInfo(state.spellId) or format('#%d', state.spellId)
+		end
+		if state.isForm then
+			state.condition = formMap[state.spellId] and format("form:%d", formMap[state.spellId]) or nil
+		end
+	end
+end
 
 --------------------------------------------------------------------------------
 -- Alternative spells
@@ -49,31 +91,11 @@ end
 addon.specialSpells = specialSpells
 
 --------------------------------------------------------------------------------
--- Handle forms
+-- Handle cancels
 --------------------------------------------------------------------------------
 
-local forms = {}
-function addon:GetFormCondition(setting, reverse, toindex)
-	reverse = not not reverse
-	toindex = toindex or tostring
-	local count, numForms = 0, GetNumShapeshiftForms()
-	for index = 1, numForms do
-		local spellId = select(5, GetShapeshiftFormInfo(index))
-		if (not not setting[toindex(spellId)])) ~= reverse then
-			count = count + 1
-			forms[count] = index
-		end
-	end
-	local result
-	if count == 0 then
-		result = false
-	elseif count == numForms then
-		result = "form"
-	else
-		result = "form:"..table.concat(forms, "/", 1, count)
-	end
-	addon:Debug('GetFormCondition', setting, reverse, toindex, '=>', result)
-	return result
+local cancels = {}
+function addon:BuildCancel(setting)
 end
 
 --------------------------------------------------------------------------------
@@ -138,55 +160,34 @@ end
 
 function addon:AddSafetyStop(append, env, settings)
 	local modifier = GetModifierCondition(settings.unsafeModifier, ",no")
-	local safety = settings.safety
-	if safety.flying then
-		append("stopmacro", format('[flying%s]', modifier))
-	end
-	if safety.vehicle then
-		append("stopmacro", format('[vehicleui%s]', modifier))
-	end
-	if safety.dismount then
-		append("stopmacro", format('[mounted%s]', modifier))
-	end
-	local safeForms = self:GetFormCondition(safety)
-	if safeForms then
-		append("stopmacro", format('[%s%s]', safeForms, modifier))
+	for key, state in pairs(states) do
+		if settings.safety[key] and state.condition and state:IsAvailable() then
+			append("stopmacro", format('[%s%s]', state.condition, modifier))
+		end
 	end
 end
 
 function addon:AddCancels(append, env, settings)
-	for id, type in pairs(cancelSpells) do
-		if IsPlayerSpell(id) and type:match("aura") and settings.cancel[tostring(id)] then
-			append("cancelaura", (GetSpellInfo(id)))
+	for key, state in pairs(states) do
+		if settings.cancel[key] and state.cancelWith and state:IsAvailable() then
+			append(state.cancelWith, state.condition and ("["..state.condition.."]") or "")
 		end
-	end
-	local cancelForms = self:GetFormCondition(settings.cancel)
-	if cancelForms then
-		append("cancelform", '['..cancelForms..']')
-	end
-	if settings.cancel.vehicle then
-		append("leavevehicle", "[vehicleui,canexitvehicle]")
-	end
-	if settings.cancel.mount then
-		append("dismount", "[mounted]")
 	end
 end
 
 function addon:AddToggle(append, env, settings)
 	if not settings.toggleMode then return end
-	append("cast", "[vehicleui,canexitvehicle][mounted]")
+	for key, state in pairs(states) do
+		if settings.dismount[key] and state.condition and state:IsAvailable() then
+			append("cast", "["..state.condition.."]")
+		end
+	end
 end
 
 function addon:AddDismount(append, env, settings)
-	append("leavevehicle", "[vehicleui,canexitvehicle]")
-	append("dismount", "[mounted]")
-	local cancelForms = self:GetFormCondition(settings.dismount, false, tonumber)
-	if cancelForms then
-		append("cancelform", "["..cancelForms.."]")
-	end
-	for id, type in pairs(cancelSpells) do
-		if IsPlayerSpell(id) and type:match("aura") and settings.dismount[id] then
-			append("cancelaura", (GetSpellInfo(id)))
+	for key, state in pairs(states) do
+		if settings.dismount[key] and state.cancelWith and state:IsAvailable() then
+			append(state.cancelWith, state.condition and ("["..state.condition.."]") or "")
 		end
 	end
 end
