@@ -194,7 +194,7 @@ Squire3_Load(function(addonName, addon)
 					},
 				},
 				profiles = profiles,
-				-- @debug@
+				-- @alpha@
 				debug = {
 					order = -1,
 					name = "Macro debug",
@@ -229,15 +229,15 @@ Squire3_Load(function(addonName, addon)
 						},
 					},
 				},
-				-- @end-debug@
+				-- @end-alpha@
 			}
 		}
 
-		--@debug@
+		--@alpha@
 		hooksecurefunc(addon, "UpdateAction", function()
 			LibStub('AceConfigRegistry-3.0'):NotifyChange(addonName)
 		end)
-		--@end-debug@
+		--@end-alpha@
 
 		return options
 	end
