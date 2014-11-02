@@ -21,9 +21,9 @@ along with Squire3.  If not, see <http://www.gnu.org/licenses/>.
 Squire3_Load(function(addonName, addon)
 
 	local L = addon.L
-	
+
 	local options
-	
+
 	local function GetOptions()
 		if options then return options end
 
@@ -38,35 +38,127 @@ Squire3_Load(function(addonName, addon)
 			else
 				EditMacro(index, MACRO_NAME, MACRO_ICON, MACRO_BODY)
 			end
-			
+
 			PickupMacro(MACRO_NAME)
 		end
-		
-		local specialSpells = {}
-		local function GetSpecialSpells()
-			wipe(specialSpells)
-			for i, spell in ipairs(addon.specialSpells) do
-				if IsPlayerSpell(spell.id) then
-					specialSpells[spell.id] = GetSpellInfo(spell.id)
-				end
+
+		local safetyOption = {
+			name = L['Safe'],
+			type = 'toggle',
+			order = 10,
+			get = function(info)
+				return addon.db.profile.safety[info[#info-1]]
+			end,
+			set = function(info, value)
+				addon.db.profile.safety[info[#info-1]] = value
+			end,
+		}
+		local cancelOption = {
+			name = L['Cancel'],
+			type = 'toggle',
+			order = 20,
+			get = function(info)
+				return addon.db.profile.cancel[info[#info-1]]
+			end,
+			set = function(info, value)
+				addon.db.profile.cancel[info[#info-1]] = value
 			end
-			return specialSpells
+
+		}
+		local useOption = {
+			name = L['Use'],
+			type = 'toggle',
+			order = 30,
+			get = function(info)
+				return addon.db.profile.spells[tonumber(info[#info-1])]
+			end,
+			set = function(info, value)
+				addon.db.profile.spells[tonumber(info[#info-1])] = value
+			end,
+		}
+		local dismountOption = {
+			name = L['Dismount'],
+			type = 'toggle',
+			order = -10,
+			get = function(info)
+				return addon.db.profile.dismount[info[#info-1]]
+			end,
+			set = function(info, value)
+				addon.db.profile.dismount[info[#info-1]] = value
+			end,
+		}
+
+		local spells = {
+			name = L['Spells and conditions'],
+			type = 'group',
+			order = 15,
+			args = {
+				mount = {
+					name = L['Mounts'],
+					type = 'group',
+					inline = true,
+					order = 10,
+					args = {
+						safety = safetyOption,
+						cancel = cancelOption,
+						dismount = dismountOption,
+					}
+				},
+				vehicle = {
+					name = L['Vehicles'],
+					type = 'group',
+					inline = true,
+					order = 20,
+					args = {
+						safety = safetyOption,
+						cancel = cancelOption,
+						dismount = dismountOption,
+					}
+				},
+				flying = {
+					name = L['Flying'],
+					type = 'group',
+					inline = true,
+					order = 30,
+					args = {
+						safety = safetyOption,
+					}
+				},
+			}
+		}
+
+		for id, spellType in pairs(addon.cancelSpells) do
+			local id, key = id, tostring(id)
+			local isForm = spellType:match('form')
+			spells.args[key] = {
+				name = GetSpellInfo(id),
+				type = 'group',
+				inline = true,
+				order = 40,
+				hidden = function() return not IsPlayerSpell(id) end,
+				args = {
+					safety = isForm and safetyOption or nil,
+					cancel = cancelOption,
+					dismount = dismountOption,
+				}
+			}
 		end
-		
-		local cancel = {}
-		local function GetCancelList()
-			wipe(cancel)
-			cancel.mount = L["Dismount"]
-			cancel.flying = L["Dismount while flying"]
-			cancel.vehicle = L["Leave vehicle"]
-			for id, spell in pairs(addon.cancelSpells) do
-				if IsPlayerSpell(id) then
-					cancel[tostring(id)] = L["Cancel %s"]:format((GetSpellInfo(id)))
-				end
+
+		for i, spell in ipairs(addon.specialSpells) do
+			local id, key = spell.id, tostring(spell.id)
+			if not spells.args[key] then
+				spells.args[key] = {
+					name = GetSpellInfo(id),
+					type = 'group',
+					inline = true,
+					order = 40,
+					hidden = function() return not IsPlayerSpell(id) end,
+					args = {}
+				}
 			end
-			return cancel
+			spells.args[key].args.use = useOption
 		end
-		
+
 		local modifiers = {
 			none    = L["None"],
 			shift   = L["Shift"],
@@ -74,24 +166,24 @@ Squire3_Load(function(addonName, addon)
 			alt     = L["Alt"],
 			any     = L["Any"],
 		}
-	
+
 		local handler = {}
 		local L = addon.L
-		
+
 		function handler:get(info)
 			local key = info[#info]
 			return addon.db.profile[key]
 		end
-		
+
 		function handler:set(info, value)
 			local key = info[#info]
 			addon.db.profile[key] = value
 		end
-		
+
 		local profiles = LibStub('AceDBOptions-3.0'):GetOptionsTable(addon.db)
 		profiles.order = -10
 		profiles.disabled = false
-	
+
 		options = {
 			name = addonName,
 			handler = handler,
@@ -113,36 +205,11 @@ Squire3_Load(function(addonName, addon)
 							disabled = InCombatLockdown,
 							order = 0,
 						},
-						toggleMode = {
-							name = L['Two-step mode'],
-							desc = L["When enabled, Squire3 will either dismount or mount each click, not both at the same time."],
-							type = 'toggle',
-							order = 5,
-						},
 						perCharFavorites = {
 							name = L['Per character favorites'],
 							desc = L["When enabled, Squire3 will save and restore favorite mounts per character."],
 							type = 'toggle',
 							order = 8,
-						},
-						spells = {
-							name = L['Use spells'],
-							desc = L['Select which spells Squire3 should use.'],
-							type = 'multiselect',
-							get = function(_, id) return addon.db.profile.spells[id] end,
-							set = function(_, id, enabled) addon.db.profile.spells[id] = enabled end,
-							values = GetSpecialSpells,
-							hidden = function() return not next(GetSpecialSpells()) end,
-							order = 10,
-						},
-						cancel = {
-							name = L['Automatically ...'],
-							desc = L['Select which action Squire3 should automatically take.'],
-							type = 'multiselect',
-							get = function(_, key) return addon.db.profile.cancel[key] end,
-							set = function(_, key, enabled) addon.db.profile.cancel[key] = enabled end,
-							values = GetCancelList,
-							order = 20,
 						},
 						unsafeModifier = {
 							name = L['Unsafe modifier'],
@@ -160,6 +227,7 @@ Squire3_Load(function(addonName, addon)
 						},
 					},
 				},
+				spells = spells,
 				cvars = {
 					name = L['Blizzard settings'],
 					desc = L['Built-in settings that interacts with shapeshift forms and mounts.'],
@@ -202,7 +270,7 @@ Squire3_Load(function(addonName, addon)
 
 	LibStub('AceConfig-3.0'):RegisterOptionsTable(addonName, GetOptions)
 	local panel = LibStub('AceConfigDialog-3.0'):AddToBlizOptions(addonName, addonName)
-	
+
 	_G.SLASH_SQUIRETHREE1 = "/squire3"
 	_G.SLASH_SQUIRETHREE2 = "/sq3"
 	_G.SlashCmdList["SQUIRETHREE"] = function()
