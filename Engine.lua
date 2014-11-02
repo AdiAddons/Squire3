@@ -152,7 +152,7 @@ end
 
 function addon:AddCancels(append, env, settings)
 	for id, type in pairs(cancelSpells) do
-		if IsPlayerSpell(id) and type == "aura" and settings.cancel[tostring(id)] and not settings.toggleMode then
+		if IsPlayerSpell(id) and type:match("aura") and settings.cancel[tostring(id)] then
 			append("cancelaura", (GetSpellInfo(id)))
 		end
 	end

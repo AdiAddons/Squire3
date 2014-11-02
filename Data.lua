@@ -37,7 +37,7 @@ if isA("DRUID") then
 		   783, "form", -- Travel form
 		  5487, "form", -- Bear form
 		 24858, "form", -- Moonkin form
-		114282, "aura", -- Treant form
+		114282, "auraform", -- Treant form, detected by form but cancelled like an aura
 		165962, "form"  -- Flight form
 	)
 	addon:RegisterSpecialSpells(
