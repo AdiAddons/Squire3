@@ -168,7 +168,7 @@ Squire3_Load(function(addonName, addon)
 							inline = true,
 							args = {
 								_desc = {
-									name = L['Squire3 will automatically cancel the selected state(s) as a part of its operation. Unselected can still be cancelled because of the autoUnshift and autoDismount settings.'],
+									name = L['Squire3 will automatically cancel the selected state(s) as a part of its operation. autoUnshift and autoDismount settings can still cause unselected state(s) to be cancelled.'],
 									type = 'description',
 									order = 0,
 								},
