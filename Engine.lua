@@ -48,6 +48,7 @@ local states = {
 	}
 }
 local orderedCancels = {}
+local orderedConditions = {}
 addon.states = states
 
 function addon:RegisterCancelSpells(id, type, ...)
@@ -62,9 +63,13 @@ function addon:RegisterCancelSpells(id, type, ...)
 	end
 end
 
+local function compareConditions(a, b)
+	return (states[a].condition or "") < (states[b].condition or "")
+end
+
 local function compareCancelWith(a, b)
 	if states[a].cancelWith == states[b].cancelWith then
-		return (states[a].condition or "") < (states[b].condition or "")
+		return compareConditions(a, b)
 	end
 	return states[a].cancelWith < states[b].cancelWith
 end
@@ -83,14 +88,15 @@ function addon:RefreshStates()
 		if state.isForm then
 			state.condition = formMap[state.spellId] and format("form:%d", formMap[state.spellId]) or nil
 		end
+		if state.condition then
+			tinsert(orderedConditions, key)
+		end
 		if state.cancelWith then
 			tinsert(orderedCancels, key)
 		end
 	end
+	sort(orderedConditions, compareConditions)
 	sort(orderedCancels, compareCancelWith)
-	for i, key in ipairs(orderedCancels) do
-		addon:Debug('orderedCancels', i, key, states[key].name, states[key].cancelWith, states[key].condition)
-	end
 end
 
 --------------------------------------------------------------------------------
@@ -115,13 +121,27 @@ do
 
 	local function doAppend(cmd, arg)
 		if cmd == currentCmd then
-			parts[numParts+1] = ";"
+			local lastArg = parts[numParts]
+			if strmatch(arg, '%](.*)$') ~= strmatch(lastArg, '%](.*)$') then
+				numParts = numParts + 1
+				parts[numParts] = ";"
+			else
+				local _, pos, forms = strfind(lastArg, '%[form:([%d/]+)')
+				if forms then
+					local newForms = strmatch(arg, '%[form:([%d/]+)')
+					if newForms then
+						parts[numParts] = strsub(lastArg, 1, pos) .. '/' .. newForms .. strsub(lastArg, pos+1)
+						return
+					end
+				end
+			end
 		else
-			parts[numParts+1] = "\n/"..cmd.." "
+			numParts = numParts + 1
+			parts[numParts] = "\n/"..cmd.." "
 			currentCmd = cmd
 		end
-		parts[numParts+2] = arg
-		numParts = numParts + 2
+		numParts = numParts + 1
+		parts[numParts] = arg
 	end
 
 	local function append(cmd, arg, ...)
@@ -132,7 +152,7 @@ do
 
 	local handlers = {
 		mount = { 'AddSafetyStop', 'AddCancels', 'AddToggle', 'AddMounts', 'AddSpells', 'AddDismount' },
-		dismount = { 'AddSafetyStop', 'AddDismount' },
+		dismount = { 'AddSafetyStop', 'AddCancels', 'AddDismount' },
 	}
 
 	function addon:BuildMacro(button, env, settings)
@@ -168,7 +188,8 @@ end
 
 function addon:AddSafetyStop(append, env, settings)
 	local modifier = GetModifierCondition(settings.unsafeModifier, ",no")
-	for key, state in pairs(states) do
+	for i, key in ipairs(orderedConditions) do
+		local state = states[key]
 		if settings.safety[key] and state.condition and state:IsAvailable() then
 			append("stopmacro", format('[%s%s]', state.condition, modifier))
 		end
@@ -186,7 +207,8 @@ end
 
 function addon:AddToggle(append, env, settings)
 	if not settings.toggleMode then return end
-	for key, state in pairs(states) do
+	for i, key in ipairs(orderedConditions) do
+		local state = states[key]
 		if settings.dismount[key] and state.condition and state:IsAvailable() then
 			append("cast", "["..state.condition.."]")
 		end
@@ -196,7 +218,7 @@ end
 function addon:AddDismount(append, env, settings)
 	for i, key in ipairs(orderedCancels) do
 		local state = states[key]
-		if settings.dismount[key] and state.cancelWith and state:IsAvailable() then
+		if settings.dismount[key] and not settings.cancel[key] and state.cancelWith and state:IsAvailable() then
 			append(state.cancelWith, state.condition and ("["..state.condition.."]") or "")
 		end
 	end
