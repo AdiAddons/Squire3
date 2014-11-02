@@ -41,32 +41,7 @@ Squire3_Load(function(addonName, addon)
 			
 			PickupMacro(MACRO_NAME)
 		end
-		
-		local specialSpells = {}
-		local function GetSpecialSpells()
-			wipe(specialSpells)
-			for i, spell in ipairs(addon.specialSpells) do
-				if IsPlayerSpell(spell.id) then
-					specialSpells[spell.id] = GetSpellInfo(spell.id)
-				end
-			end
-			return specialSpells
-		end
-		
-		local cancel = {}
-		local function GetCancelList()
-			wipe(cancel)
-			cancel.mount = L["Dismount"]
-			cancel.flying = L["Dismount while flying"]
-			cancel.vehicle = L["Leave vehicle"]
-			for id, spell in pairs(addon.cancelSpells) do
-				if IsPlayerSpell(id) then
-					cancel[tostring(id)] = L["Cancel %s"]:format((GetSpellInfo(id)))
-				end
-			end
-			return cancel
-		end
-		
+
 		local modifiers = {
 			none    = L["None"],
 			shift   = L["Shift"],
@@ -125,25 +100,6 @@ Squire3_Load(function(addonName, addon)
 							type = 'toggle',
 							order = 8,
 						},
-						spells = {
-							name = L['Use spells'],
-							desc = L['Select which spells Squire3 should use.'],
-							type = 'multiselect',
-							get = function(_, id) return addon.db.profile.spells[id] end,
-							set = function(_, id, enabled) addon.db.profile.spells[id] = enabled end,
-							values = GetSpecialSpells,
-							hidden = function() return not next(GetSpecialSpells()) end,
-							order = 10,
-						},
-						cancel = {
-							name = L['Automatically ...'],
-							desc = L['Select which action Squire3 should automatically take.'],
-							type = 'multiselect',
-							get = function(_, key) return addon.db.profile.cancel[key] end,
-							set = function(_, key, enabled) addon.db.profile.cancel[key] = enabled end,
-							values = GetCancelList,
-							order = 20,
-						},
 						unsafeModifier = {
 							name = L['Unsafe modifier'],
 							desc = L['Select a modifier to enforce a unsafe behavior (like dismount mid-air).'],
@@ -159,6 +115,79 @@ Squire3_Load(function(addonName, addon)
 							order = 40,
 						},
 					},
+				},
+				spells = {
+					name = L['Spells and conditions'],
+					type = 'group',
+					order = 20,
+					get = function(info)
+						local n = #info
+						return addon.db.profile[info[n-1]][info[n]]
+					end,
+					set = function(info, value)
+						local n = #info
+						addon.db.profile[info[n-1]][info[n]] = value
+					end,
+					args = {
+						safety = {
+							name = L['Safety conditions'],
+							order = 10,
+							type = 'group',
+							inline = true,
+							args = {
+								_desc = {
+									name = L['Squire3 will not do anything if any of the selected condition(s) is met, unless the unsafe modifier is used.'],
+									type = 'description',
+									order = 0,
+								},
+							}
+						},
+						spells = {
+							name = L['Use spells'],
+							order = 20,
+							type = 'group',
+							inline = true,
+							get = function(info)
+								return addon.db.profile.spells[tonumber(info[#info])]
+							end,
+							set = function(info, value)
+								addon.db.profile.spells[tonumber(info[#info])] = value
+							end,
+							args = {
+								_desc = {
+									name = L['Squire3 will use the selected spell(s).'],
+									type = 'description',
+									order = 0,
+								},
+							}
+						},
+						cancel = {
+							name = L['Automatically cancel/leave'],
+							order = 30,
+							type = 'group',
+							inline = true,
+							args = {
+								_desc = {
+									name = L['Squire3 will automatically cancel the selected state(s) as a part of its operation. Unselected can still be cancelled because of the autoUnshift and autoDismount settings.'],
+									type = 'description',
+									order = 0,
+								},
+							}
+						},
+						dismount = {
+							name = L['Dismount'],
+							order = 40,
+							type = 'group',
+							inline = true,
+							args = {
+								_desc = {
+									name = L['Squire3 will include the selected state(s) in its dismount action.'],
+									type = 'description',
+									order = 0,
+								},
+							}
+						}
+					}
 				},
 				cvars = {
 					name = L['Blizzard settings'],
@@ -196,7 +225,36 @@ Squire3_Load(function(addonName, addon)
 				profiles = profiles
 			}
 		}
+		
+		local toggleGroups = options.args.spells.args
 
+		for i, spell in ipairs(addon.specialSpells) do
+			local id = spell.id
+			toggleGroups.spells.args[tostring(spell.id)] = {
+				name = GetSpellInfo(spell.id),
+				type = 'toggle',
+				hidden = function() return not IsPlayerSpell(id) end,
+				order = id,
+			}
+		end
+		
+		for key, state in pairs(addon.states) do
+			local key, state = key, state
+			local option = { 
+				name = function() return state.name end,
+				type = 'toggle',
+				hidden = function() return not state:IsAvailable() end,
+				order = tonumber(key) or 1,
+			}
+			if state.cancelWith then
+				toggleGroups.cancel.args[key] = option
+				toggleGroups.dismount.args[key] = option
+			end
+			if state.condition then
+				toggleGroups.safety.args[key] = option
+			end
+		end
+		
 		return options
 	end
 
