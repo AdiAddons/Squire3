@@ -47,6 +47,7 @@ local states = {
 		IsAvailable = function() return true end,
 	}
 }
+local orderedCancels = {}
 addon.states = states
 
 function addon:RegisterCancelSpells(id, type, ...)
@@ -61,12 +62,20 @@ function addon:RegisterCancelSpells(id, type, ...)
 	end
 end
 
+local function compareCancelWith(a, b)
+	if states[a].cancelWith == states[b].cancelWith then
+		return (states[a].condition or "") < (states[b].condition or "")
+	end
+	return states[a].cancelWith < states[b].cancelWith
+end
+
 local formMap = {}
 function addon:RefreshStates()
 	wipe(formMap)
 	for index = 1, GetNumShapeshiftForms() do
 		formMap[select(5, GetShapeshiftFormInfo(index))] = index
 	end
+	wipe(orderedCancels)
 	for key, state in pairs(states) do
 		if state.spellId then
 			state.name = GetSpellInfo(state.spellId) or format('#%d', state.spellId)
@@ -74,6 +83,13 @@ function addon:RefreshStates()
 		if state.isForm then
 			state.condition = formMap[state.spellId] and format("form:%d", formMap[state.spellId]) or nil
 		end
+		if state.cancelWith then
+			tinsert(orderedCancels, key)
+		end
+	end
+	sort(orderedCancels, compareCancelWith)
+	for i, key in ipairs(orderedCancels) do
+		addon:Debug('orderedCancels', i, key, states[key].name, states[key].cancelWith, states[key].condition)
 	end
 end
 
@@ -89,14 +105,6 @@ function addon:RegisterSpecialSpells(id, condition, ground, flying, swimming, ..
 	end
 end
 addon.specialSpells = specialSpells
-
---------------------------------------------------------------------------------
--- Handle cancels
---------------------------------------------------------------------------------
-
-local cancels = {}
-function addon:BuildCancel(setting)
-end
 
 --------------------------------------------------------------------------------
 -- Main building method
@@ -168,7 +176,8 @@ function addon:AddSafetyStop(append, env, settings)
 end
 
 function addon:AddCancels(append, env, settings)
-	for key, state in pairs(states) do
+	for i, key in ipairs(orderedCancels) do
+		local state = states[key]
 		if settings.cancel[key] and state.cancelWith and state:IsAvailable() then
 			append(state.cancelWith, state.condition and ("["..state.condition.."]") or "")
 		end
@@ -185,7 +194,8 @@ function addon:AddToggle(append, env, settings)
 end
 
 function addon:AddDismount(append, env, settings)
-	for key, state in pairs(states) do
+	for i, key in ipairs(orderedCancels) do
+		local state = states[key]
 		if settings.dismount[key] and state.cancelWith and state:IsAvailable() then
 			append(state.cancelWith, state.condition and ("["..state.condition.."]") or "")
 		end
