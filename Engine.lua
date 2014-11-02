@@ -31,7 +31,7 @@ local L = addon.L
 local states = {
 	mount = {
 		name        = L['Mounts'],
-		condition   = "mount",
+		condition   = "mounted",
 		cancelWith  = "dismount",
 		IsAvailable = function() return true end,
 	},
