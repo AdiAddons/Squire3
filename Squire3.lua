@@ -42,9 +42,13 @@ addon.Debug = Debug
 local DEFAULT_SETTINGS = {
 	profile = {
 		spells = { ['*'] = true },
+		dismount = { ['*'] = true },
 		cancel = {
-			['*'] = true,
-			flying = false,
+			['*'] = false,
+		},
+		safety = {
+			['*'] = false,
+			flying = true,
 		},
 		unsafeModifier = "shift",
 		groundModifier = "ctrl",
