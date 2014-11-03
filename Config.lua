@@ -89,8 +89,8 @@ Squire3_Load(function(addonName, addon)
 							order = 0,
 						},
 						toggleMode = {
-							name = L['Two-step mode'],
-							desc = L["When enabled, Squire3 will either dismount or mount each click, not both at the same time."],
+							name = L['Toggle mode'],
+							desc = L["When enabled, Squire3 will either dismount or mount, not both at the same time."],
 							type = 'toggle',
 							order = 5,
 						},
