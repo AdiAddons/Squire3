@@ -28,23 +28,49 @@ local L = addon.L
 -- States
 --------------------------------------------------------------------------------
 
+local function AlwaysTrue()
+	return true
+end
+
+local function NoCondition(self, modifier)
+	return ""
+end
+
+local function GetCondition(self, modifier)
+	return format('[%s%s]', self.condition, modifier or "")
+end
+
+local function GetCancelArgs(self, modifier)
+	return self.cancelWith, self:GetCondition(modifier)
+end
+
+local function GetCancelAuraArgs(self, modifier)
+	return self.cancelWith, self:GetCondition(modifier)..GetSpellInfo(self.spellId)
+end
+
 local states = {
 	mount = {
-		name        = L['Mounts'],
-		condition   = "mounted",
-		cancelWith  = "dismount",
-		IsAvailable = function() return true end,
+		name          = L['Mounts'],
+		condition     = "mounted",
+		cancelWith    = "dismount",
+		IsAvailable   = AlwaysTrue,
+		GetCondition  = GetCondition,
+		GetCancelArgs = GetCancelArgs,
 	},
 	flying = {
-		name        = L['Flying'],
-		condition   = "flying",
-		IsAvailable = function() return true end,
+		name          = L['Flying'],
+		condition     = "flying",
+		IsAvailable   = AlwaysTrue,
+		GetCondition  = GetCondition,
+		GetCancelArgs = GetCancelArgs,
 	},
 	vehicle = {
-		name        = L['Vehicles'],
-		condition   = "vehicleui,canexitvehicle",
-		cancelWith  = "leavevehicle",
-		IsAvailable = function() return true end,
+		name          = L['Vehicles'],
+		condition     = "vehicleui,canexitvehicle",
+		cancelWith    = "leavevehicle",
+		IsAvailable   = AlwaysTrue,
+		GetCondition  = GetCondition,
+		GetCancelArgs = GetCancelArgs,
 	}
 }
 local orderedCancels = {}
@@ -53,10 +79,12 @@ addon.states = states
 
 function addon:RegisterCancelSpells(id, type, ...)
 	states[tostring(id)] = {
-		spellId     = id,
-		isForm      = type:match("form"),
-		cancelWith  = type:match("aura") and "cancelaura" or "cancelform",
-		IsAvailable = function() return IsPlayerSpell(id) end,
+		spellId       = id,
+		isForm        = type:match("form"),
+		cancelWith    = type:match("aura") and "cancelaura" or "cancelform",
+		IsAvailable   = function() return IsPlayerSpell(id) end,
+		GetCondition  = NoCondition,
+		GetCancelArgs = type:match("aura") and GetCancelAuraArgs or GetCancelArgs
 	}
 	if ... then
 		return self:RegisterCancelSpells(...)
@@ -76,11 +104,10 @@ end
 
 local formMap = {}
 function addon:RefreshStates()
-	wipe(formMap)
+	wipe(formMap, orderedCancels, orderedConditions)
 	for index = 1, GetNumShapeshiftForms() do
 		formMap[select(5, GetShapeshiftFormInfo(index))] = index
 	end
-	wipe(orderedCancels)
 	for key, state in pairs(states) do
 		if state.spellId then
 			state.name = GetSpellInfo(state.spellId) or format('#%d', state.spellId)
@@ -190,8 +217,8 @@ function addon:AddSafetyStop(append, env, settings)
 	local modifier = GetModifierCondition(settings.unsafeModifier, ",no")
 	for i, key in ipairs(orderedConditions) do
 		local state = states[key]
-		if settings.safety[key] and state.condition and state:IsAvailable() then
-			append("stopmacro", format('[%s%s]', state.condition, modifier))
+		if settings.safety[key] and state:IsAvailable() then
+			append("stopmacro", state:GetCondition(modifier))
 		end
 	end
 end
@@ -199,8 +226,8 @@ end
 function addon:AddCancels(append, env, settings)
 	for i, key in ipairs(orderedCancels) do
 		local state = states[key]
-		if settings.cancel[key] and state.cancelWith and state:IsAvailable() then
-			append(state.cancelWith, state.condition and ("["..state.condition.."]") or "")
+		if settings.cancel[key] and state:IsAvailable() then
+			append(state:GetCancelArgs())
 		end
 	end
 end
@@ -209,8 +236,8 @@ function addon:AddToggle(append, env, settings)
 	if not settings.toggleMode then return end
 	for i, key in ipairs(orderedConditions) do
 		local state = states[key]
-		if settings.dismount[key] and state.condition and state:IsAvailable() then
-			append("cast", "["..state.condition.."]")
+		if settings.dismount[key] and state:IsAvailable() then
+			append("cast", state:GetCondition())
 		end
 	end
 end
@@ -218,8 +245,8 @@ end
 function addon:AddDismount(append, env, settings)
 	for i, key in ipairs(orderedCancels) do
 		local state = states[key]
-		if settings.dismount[key] and not settings.cancel[key] and state.cancelWith and state:IsAvailable() then
-			append(state.cancelWith, state.condition and ("["..state.condition.."]") or "")
+		if settings.dismount[key] and not settings.cancel[key] and state:IsAvailable() then
+			append(state:GetCancelArgs())
 		end
 	end
 end
