@@ -8,7 +8,7 @@ How to use it ?
 
 Either open the option panel from the Blizzard addon options (or with /squire3) and drag the macro into action bar, either assign some keybinding to the Squire3 action. Then select your favorite mounts in the Mount Journal.
 
-From now on, Squire3 which choose a random mount each time you use it.
+From now on, Squire3 will choose a random mount each time you use it.
 
 Squire3 also handles class and race specific spells (travel form, aspect of the cheetah, ...).
 
