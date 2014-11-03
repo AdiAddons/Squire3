@@ -312,8 +312,11 @@ function addon:AddSpells(append, env, settings)
 			if pos then
 				condition = strsub(condition, 1, pos)..GetModifierCondition(settings.groundModifier, ",no")..strsub(condition, pos+1)
 			end
-			local ensure = settings.toggleMode and "" or "!"
-			append("cast", format("%s%s%s", condition, ensure, GetSpellInfo(spell.id)))
+				append("cast", format("%s%s%s",
+					condition,
+					toggle and dismount[spell.id] and "" or "!",
+					(GetSpellInfo(spell.id))
+				))
 		end
 	end
 end
@@ -378,14 +381,27 @@ function addon:AddMounts(append, env, settings)
 	local groundSpell = contexts.ground:GetRandom()
 	local swimmingSpell = contexts.swimming:GetRandom()
 
-	local ensure = settings.toggleMode and "" or "!"
+	local toggle, dismount = settings.toggleMode, settings.dismount
 	if swimmingSpell then
-		append("cast", format("[swimming]%s%s", ensure, GetSpellInfo(swimmingSpell)))
+		append("cast", format(
+			"[swimming]%s%s",
+			toggle and dismount[swimmingSpell] and "" or "!",
+			(GetSpellInfo(swimmingSpell))
+		))
 	end
 	if flyingSpell then
-		append("cast", format("[flyable%s]%s%s", GetModifierCondition(settings.groundModifier, ",no"), ensure, GetSpellInfo(flyingSpell)))
+		append("cast", format(
+			"[flyable%s]%s%s",
+			GetModifierCondition(settings.groundModifier, ",no"),
+			toggle and dismount[flyingSpell] and "" or "!",
+			(GetSpellInfo(flyingSpell))
+		))
 	end
 	if groundSpell then
-		append("cast", ensure..GetSpellInfo(groundSpell))
+		append("cast", format(
+			"%s%s",
+			toggle and dismount[groundSpell] and "" or "!",
+			(GetSpellInfo(groundSpell))
+		))
 	end
 end
