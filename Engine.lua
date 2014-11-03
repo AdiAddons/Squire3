@@ -149,10 +149,11 @@ do
 	local function doAppend(cmd, arg)
 		if cmd == currentCmd then
 			local lastArg = parts[numParts]
-			if strmatch(arg, '%](.*)$') ~= strmatch(lastArg, '%](.*)$') then
-				numParts = numParts + 1
-				parts[numParts] = ";"
-			else
+			if arg == lastArg then
+				return
+			end
+			local suffixPos, _, suffix = strfind(lastArg, '%]([^%[%]]*)$')
+			if suffixPos and suffix == strmatch(arg, '%]([^%[%]]*)$') then
 				local _, pos, forms = strfind(lastArg, '%[form:([%d/]+)')
 				if forms then
 					local newForms = strmatch(arg, '%[form:([%d/]+)')
@@ -161,6 +162,10 @@ do
 						return
 					end
 				end
+				parts[numParts] = strsub(lastArg, 1, suffixPos)
+			else
+				numParts = numParts + 1
+				parts[numParts] = ";"
 			end
 		else
 			numParts = numParts + 1
