@@ -114,11 +114,11 @@ function addon:ADDON_LOADED(event, name)
 	eventFrame:RegisterEvent('COMPANION_UPDATE')
 	eventFrame:RegisterEvent('UPDATE_SHAPESHIFT_FORMS')
 	eventFrame:RegisterEvent('SPELLS_CHANGED')
+	eventFrame:RegisterEvent('PLAYER_REGEN_DISABLED')
+
 	self:RestoreFavorites()
-	self:RefreshStates()
 end
 
-eventFrame:RegisterEvent('PLAYER_REGEN_DISABLED')
 eventFrame:RegisterEvent('ADDON_LOADED')
 
 function addon:COMPANION_UPDATE(event, type)
