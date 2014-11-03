@@ -113,6 +113,7 @@ function addon:ADDON_LOADED(event, name)
 
 	eventFrame:RegisterEvent('COMPANION_UPDATE')
 	eventFrame:RegisterEvent('UPDATE_SHAPESHIFT_FORMS')
+	eventFrame:RegisterEvent('SPELLS_CHANGED')
 	self:RestoreFavorites()
 	self:RefreshStates()
 end
@@ -128,6 +129,11 @@ function addon:COMPANION_UPDATE(event, type)
 end
 
 function addon:UPDATE_SHAPESHIFT_FORMS()
+	self:RefreshStates()
+end
+
+function addon:SPELLS_CHANGED()
+	eventFrame:UnregisterEvent('SPELLS_CHANGED')
 	self:RefreshStates()
 end
 
