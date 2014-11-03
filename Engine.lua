@@ -54,6 +54,7 @@ local states = {
 		condition     = "mounted",
 		cancelWith    = "dismount",
 		IsAvailable   = AlwaysTrue,
+		IsUsable      = AlwaysTrue,
 		GetCondition  = GetCondition,
 		GetCancelArgs = GetCancelArgs,
 	},
@@ -61,6 +62,7 @@ local states = {
 		name          = L['Flying'],
 		condition     = "flying",
 		IsAvailable   = AlwaysTrue,
+		IsUsable      = function(self, env) return not env.instance end,
 		GetCondition  = GetCondition,
 		GetCancelArgs = GetCancelArgs,
 	},
@@ -69,6 +71,7 @@ local states = {
 		condition     = "vehicleui,canexitvehicle",
 		cancelWith    = "leavevehicle",
 		IsAvailable   = AlwaysTrue,
+		IsUsable      = AlwaysTrue,
 		GetCondition  = GetCondition,
 		GetCancelArgs = GetCancelArgs,
 	}
@@ -83,6 +86,7 @@ function addon:RegisterCancelSpells(id, type, ...)
 		isForm        = type:match("form"),
 		cancelWith    = type:match("aura") and "cancelaura" or "cancelform",
 		IsAvailable   = function() return IsPlayerSpell(id) end,
+		IsUsable      = AlwaysTrue,
 		GetCondition  = NoCondition,
 		GetCancelArgs = type:match("aura") and GetCancelAuraArgs or GetCancelArgs
 	}
@@ -222,7 +226,7 @@ function addon:AddSafetyStop(append, env, settings)
 	local modifier = GetModifierCondition(settings.unsafeModifier, ",no")
 	for i, key in ipairs(orderedConditions) do
 		local state = states[key]
-		if settings.safety[key] and state:IsAvailable() then
+		if settings.safety[key] and state:IsAvailable() and state:IsUsable(env) then
 			append("stopmacro", state:GetCondition(modifier))
 		end
 	end
@@ -231,7 +235,7 @@ end
 function addon:AddCancels(append, env, settings)
 	for i, key in ipairs(orderedCancels) do
 		local state = states[key]
-		if settings.cancel[key] and state:IsAvailable() then
+		if settings.cancel[key] and state:IsAvailable() and state:IsUsable(env) then
 			append(state:GetCancelArgs())
 		end
 	end
@@ -241,7 +245,7 @@ function addon:AddToggle(append, env, settings)
 	if not settings.toggleMode then return end
 	for i, key in ipairs(orderedConditions) do
 		local state = states[key]
-		if settings.dismount[key] and state:IsAvailable() then
+		if settings.dismount[key] and state:IsAvailable() and state:IsUsable(env) then
 			append("cast", state:GetCondition())
 		end
 	end
@@ -250,7 +254,7 @@ end
 function addon:AddDismount(append, env, settings)
 	for i, key in ipairs(orderedCancels) do
 		local state = states[key]
-		if settings.dismount[key] and not settings.cancel[key] and state:IsAvailable() then
+		if settings.dismount[key] and not settings.cancel[key] and state:IsAvailable() and state:IsUsable(env) then
 			append(state:GetCancelArgs())
 		end
 	end
@@ -305,6 +309,7 @@ local contexts = {
 
 function addon:AddSpells(append, env, settings)
 	if env.canMount then return end
+	local toggle, dismount = settings.toggleMode, settings.dismount
 	for index, spell in ipairs(specialSpells) do
 		if IsPlayerSpell(spell.id) and settings.spells[spell.id] then
 			local condition = spell.condition
@@ -312,11 +317,19 @@ function addon:AddSpells(append, env, settings)
 			if pos then
 				condition = strsub(condition, 1, pos)..GetModifierCondition(settings.groundModifier, ",no")..strsub(condition, pos+1)
 			end
+			if env.instance then
+				local a, b = strfind(condition, ",?noflyable,?")
+				if a and b then
+					condition = strsub(condition, 1, a-1) .. strsub(condition, b+1)
+				end
+			end
+			if not pos or not env.instance then
 				append("cast", format("%s%s%s",
 					condition,
 					toggle and dismount[spell.id] and "" or "!",
 					(GetSpellInfo(spell.id))
 				))
+			end
 		end
 	end
 end
@@ -377,7 +390,7 @@ function addon:AddMounts(append, env, settings)
 		contexts:Update(spellId, groundSpeed, flyingSpeed, swimmingSpeed)
 	end
 
-	local flyingSpell = contexts.flying:GetRandom()
+	local flyingSpell = not env.instance and contexts.flying:GetRandom()
 	local groundSpell = contexts.ground:GetRandom()
 	local swimmingSpell = contexts.swimming:GetRandom()
 

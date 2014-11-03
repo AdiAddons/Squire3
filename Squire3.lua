@@ -84,6 +84,7 @@ function addon:UpdateAction(widget, button)
 	env.moving = GetUnitSpeed("player") > 0 or IsFalling()
 	env.combat = button == "combat" or InCombatLockdown()
 	env.indoors = IsIndoors()
+	env.instance = IsInInstance()
 	env.canMount = not (env.moving or env.combat or env.indoors)
 	local suffix = (button == "dismount") and "-dismount" or ""
 	widget:SetAttribute("macrotext"..suffix, addon:BuildMacro(button, env, self.db.profile))
