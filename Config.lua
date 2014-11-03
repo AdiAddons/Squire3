@@ -136,7 +136,7 @@ Squire3_Load(function(addonName, addon)
 							inline = true,
 							args = {
 								_desc = {
-									name = L['Squire3 will not do anything if any of the selected condition(s) is met, unless the unsafe modifier is used.'],
+									name = L['Squire3 will not do anything if any of the selected condition(s) are met, unless the unsafe modifier is used.'],
 									type = 'description',
 									order = 0,
 								},
@@ -152,6 +152,14 @@ Squire3_Load(function(addonName, addon)
 							end,
 							set = function(info, value)
 								addon.db.profile.spells[tonumber(info[#info])] = value
+							end,
+							hidden = function()
+								for i, spell in ipairs(addon.specialSpells) do
+									if IsPlayerSpell(spell.id) then
+										return false
+									end
+								end
+								return true
 							end,
 							args = {
 								_desc = {
