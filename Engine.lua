@@ -33,7 +33,7 @@ local function AlwaysTrue()
 end
 
 local function NoCondition(self, modifier)
-	return ""
+	return
 end
 
 local function GetCondition(self, modifier)
@@ -45,7 +45,7 @@ local function GetCancelArgs(self, modifier)
 end
 
 local function GetCancelAuraArgs(self, modifier)
-	return self.cancelWith, self:GetCondition(modifier)..GetSpellInfo(self.spellId)
+	return "cancelaura", (self:GetCondition(modifier) or "")..GetSpellInfo(self.spellId)
 end
 
 local states = {
