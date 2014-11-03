@@ -117,7 +117,7 @@ Squire3_Load(function(addonName, addon)
 					},
 				},
 				spells = {
-					name = L['Spells and conditions'],
+					name = L['Mounts, spells and conditions'],
 					type = 'group',
 					order = 20,
 					get = function(info)
@@ -164,6 +164,33 @@ Squire3_Load(function(addonName, addon)
 							args = {
 								_desc = {
 									name = L['Squire3 will use the selected spell(s).'],
+									type = 'description',
+									order = 0,
+								},
+							}
+						},
+						mounts = {
+							name = L['Special mounts'],
+							order = 25,
+							type = 'group',
+							inline = true,
+							get = function(info)
+								return addon.db.profile.spells[tonumber(info[#info])]
+							end,
+							set = function(info, value)
+								addon.db.profile.spells[tonumber(info[#info])] = value
+							end,
+							hidden = function()
+								for id in pairs(addon.specialMounts) do
+									if IsPlayerSpell(id) then
+										return false
+									end
+								end
+								return true
+							end,
+							args = {
+								_desc = {
+									name = L['These mounts cannot be set as favorite in the Mount window, but you can select them there.'],
 									type = 'description',
 									order = 0,
 								},
@@ -276,6 +303,15 @@ Squire3_Load(function(addonName, addon)
 			local id = spell.id
 			toggleGroups.spells.args[tostring(spell.id)] = {
 				name = GetSpellInfo(spell.id),
+				type = 'toggle',
+				hidden = function() return not IsPlayerSpell(id) end,
+				order = id,
+			}
+		end
+
+		for id in pairs(addon.specialMounts) do
+			toggleGroups.mounts.args[tostring(id)] = {
+				name = GetSpellInfo(id),
 				type = 'toggle',
 				hidden = function() return not IsPlayerSpell(id) end,
 				order = id,

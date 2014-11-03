@@ -144,6 +144,20 @@ end
 addon.specialSpells = specialSpells
 
 --------------------------------------------------------------------------------
+-- Special mounts
+--------------------------------------------------------------------------------
+-- Listed in mounts but cannot be set as favorite
+
+local specialMounts = {}
+function addon:RegisterSpecialMounts(id, ...)
+	if id then
+		specialMounts[id] = true
+		return self:RegisterSpecialMounts(...)
+	end
+end
+addon.specialMounts = specialMounts
+
+--------------------------------------------------------------------------------
 -- Main building method
 --------------------------------------------------------------------------------
 
@@ -369,7 +383,7 @@ function addon:IterateMounts(env, settings)
 		while index < numMounts do
 			index = index + 1
 			local _, spellId, _, _, isUsable, _, isFavorite, _, _, hideOnChar, isCollected = C_MountJournal.GetMountInfo(index)
-			if isUsable and isCollected and isFavorite and not hideOnChar then
+			if isUsable and isCollected and (isFavorite or specialMounts[spellId] and settings.spells[spellId]) and not hideOnChar then
 				local _, _, _, _, mountType = C_MountJournal.GetMountInfoExtra(index)
 				if mountTypeSpeeds[mountType] then
 					return spellId, unpack(mountTypeSpeeds[mountType], 1, 3)

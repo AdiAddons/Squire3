@@ -31,6 +31,17 @@ if "Worgen" == select(2, UnitRace("player")) then
 	)
 end
 
+addon:RegisterSpecialMounts(
+	75207 -- Abyssal Seahorse
+)
+
+if isA("DEATHKNIGHT") then
+	addon:RegisterSpecialMounts(
+		48778, -- Acherus Deathcharger
+		54729  -- Winged Steed of the Ebon Blade
+	)
+end
+
 if isA("DRUID") then
 	addon:RegisterCancelSpells(
 		   768, "form", -- Cat form
@@ -67,6 +78,26 @@ if isA("MONK") then
 	)
 end
 
+if isA("PALADIN") then
+	addon:RegisterSpecialMounts(
+		13819, -- Warhorse
+		34769, -- Thalassian Warhorse
+		73629, -- Exarch's Elekk
+		69820, -- Sunwalker Kodo
+		23214, -- Charger
+		34767, -- Thalassian Charger
+		73630, -- Great Exarch's Elekk
+		69826, -- Great Sunwalker Kodo
+		66906  -- Argent Charger
+	)
+end
+
+if isA("PRIEST") then
+	addon:RegisterCancelSpells(
+		15473, "form" -- Shadowform
+	)
+end
+
 if isA("SHAMAN") then
 	addon:RegisterCancelSpells(
 		2645, "aura" -- Ghost Wolf
@@ -76,8 +107,9 @@ if isA("SHAMAN") then
 	)
 end
 
-if isA("PRIEST") then
-	addon:RegisterCancelSpells(
-		15473, "form" -- Shadowform
+if isA("WARLOCK") then
+	addon:RegisterSpecialMounts(
+		 5784, -- Felsteed
+		23161  --Dreadsteed
 	)
 end
