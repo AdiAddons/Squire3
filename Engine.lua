@@ -417,12 +417,20 @@ function addon:AddMounts(append, env, settings)
 		))
 	end
 	if flyingSpell then
-		append("cast", format(
-			"[flyable%s]%s%s",
-			GetModifierCondition(settings.groundModifier, ",no"),
-			toggle and dismount[flyingSpell] and "" or "!",
-			(GetSpellInfo(flyingSpell))
-		))
+		if IsUsableItem(37011) then -- Magic Broom hack
+			append("use", format(
+				"[flyable%s]%s",
+				GetModifierCondition(settings.groundModifier, ",no"),
+				(GetItemInfo(37011))
+			))
+		else
+			append("cast", format(
+				"[flyable%s]%s%s",
+				GetModifierCondition(settings.groundModifier, ",no"),
+				toggle and dismount[flyingSpell] and "" or "!",
+				(GetSpellInfo(flyingSpell))
+			))
+		end
 	end
 	if groundSpell then
 		append("cast", format(
