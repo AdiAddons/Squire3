@@ -53,9 +53,14 @@ local DEFAULT_SETTINGS = {
 		unsafeModifier = "shift",
 		groundModifier = "ctrl",
 		toggleMode = false,
-		perCharFavorites = false,
+		favoriteSection = "global",
 	},
 	char = {
+		favorites = {
+			['*'] = false
+		}
+	},
+	global = {
 		favorites = {
 			['*'] = false
 		}
@@ -106,6 +111,11 @@ function addon:ADDON_LOADED(event, name)
 	if name ~= addonName then return end
 
 	self.db = LibStub('AceDB-3.0'):New(addonName.."DB", DEFAULT_SETTINGS, true)
+
+	if self.db.profile.perCharFavorites then
+		self.db.profile.favoriteSection = "char"
+		self.db.profile.perCharFavorites = nil
+	end
 
 	self.db.RegisterCallback(self, 'OnDatabaseShutdown', function() return self:SaveFavorites() end)
 
@@ -160,29 +170,32 @@ function addon:ScanSpecialMounts()
 end
 
 --------------------------------------------------------------------------------
--- Per character favorites
+-- Favorites
 --------------------------------------------------------------------------------
 
+function addon:GetFavoriteDB()
+	return self.db[self.db.profile.favoriteSection].favorites
+end
+
 function addon:SaveFavorites()
-	if not self.db.profile.perCharFavorites then
-		return
-	end
+	local favorites = self:GetFavoriteDB()
 	for index = 1, C_MountJournal.GetNumMounts() do
 		local _, spellId, _, _, _, _, isFavorite = C_MountJournal.GetMountInfo(index)
-		self.db.char.favorites[spellId] = isFavorite
+		favorites[spellId] = isFavorite
 	end
 end
 
 function addon:RestoreFavorites()
-	if not self.db.profile.perCharFavorites then
-		return
-	end
+	local favorites = self:GetFavoriteDB()
 	for index = 1, C_MountJournal.GetNumMounts() do
-		local _, spellId, _, _, _, _, isFavorite = C_MountJournal.GetMountInfo(index)
-		local saved = self.db.char.favorites[spellId] or false
-		if saved ~= isFavorite then
-			C_MountJournal.SetIsFavorite(index, saved)
-			self:Debug("Restored favorite status of", GetSpellInfo(spellId), "to", saved and "favorite" or "not favorite")
+		local isFavorite, canFavorite = C_MountJournal.GetIsFavorite(index)
+		if canFavorite then
+			local _, spellId = C_MountJournal.GetMountInfo(index)
+			local saved = favorites[spellId] or false
+			if saved ~= isFavorite then
+				C_MountJournal.SetIsFavorite(index, saved)
+				self:Debug("Restored favorite status of", GetSpellInfo(spellId), "to", saved and "favorite" or "not favorite")
+			end
 		end
 	end
 end

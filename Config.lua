@@ -118,6 +118,13 @@ Squire3_Load(function(addonName, addon)
 							desc = L["When enabled, Squire3 will save and restore favorite mounts per character."],
 							type = 'toggle',
 							order = 8,
+							get = function()
+								return addon.db.profile.favoriteSection == "char"
+							end,
+							set = function(_, value)
+								addon.db.profile.favoriteSection = value and "char" or "global"
+								addon:RestoreFavorites()
+							end
 						},
 						unsafeModifier = {
 							name = L['Unsafe modifier'],

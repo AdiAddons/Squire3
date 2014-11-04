@@ -364,6 +364,15 @@ local mountTypeSpeeds = {
 }
 local unknownMountType = {}
 
+function addon:IsFavorite(index)
+	local isFavorite, canFavorite = C_MountJournal.GetIsFavorite(index)
+	if canFavorite then
+		return isFavorite
+	end
+	local _, spellId = C_MountJournal.GetMountInfo(index)
+	return self:GetFavoriteDB()[spellId]
+end
+
 -- Spell + mount iterator
 local C_MountJournal = C_MountJournal
 function addon:IterateMounts(env, settings)
@@ -382,8 +391,8 @@ function addon:IterateMounts(env, settings)
 		end
 		while index < numMounts do
 			index = index + 1
-			local _, spellId, _, _, isUsable, _, isFavorite, _, _, hideOnChar, isCollected = C_MountJournal.GetMountInfo(index)
-			if isUsable and isCollected and (isFavorite or specialMounts[spellId] and settings.spells[spellId]) and not hideOnChar then
+			local _, spellId, _, _, isUsable, _, _, _, _, hideOnChar, isCollected = C_MountJournal.GetMountInfo(index)
+			if isUsable and isCollected and not hideOnChar and self:IsFavorite(index) then
 				local _, _, _, _, mountType = C_MountJournal.GetMountInfoExtra(index)
 				if mountTypeSpeeds[mountType] then
 					return spellId, unpack(mountTypeSpeeds[mountType], 1, 3)
