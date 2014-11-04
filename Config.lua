@@ -67,6 +67,8 @@ Squire3_Load(function(addonName, addon)
 		profiles.order = -10
 		profiles.disabled = false
 
+		local toggles = {}
+
 		options = {
 			name = addonName,
 			handler = handler,
@@ -90,9 +92,26 @@ Squire3_Load(function(addonName, addon)
 						},
 						toggleMode = {
 							name = L['Toggle mode'],
-							desc = L["When enabled, Squire3 will either dismount or mount, not both at the same time."],
+							desc = function()
+								local count = 0
+								for key, state in pairs(addon.states) do
+									if state:IsAvailable() and state.condition and state.cancelWith then
+										count = count + 1
+										toggles[count] = state.name
+									end
+								end
+								return L['When enabled, Squire3 will either dismount or mount, not both at the same time. This only works with: %s.']:format(table.concat(toggles, ", ", 1, count):lower())
+							end,
 							type = 'toggle',
 							order = 5,
+							disabled = function()
+								for key, state in pairs(addon.states) do
+									if state:IsAvailable() and state.condition and state.cancelWith and addon.db.profile.dismount[key] then
+										return false
+									end
+								end
+								return true
+							end,
 						},
 						perCharFavorites = {
 							name = L['Per character favorites'],
@@ -210,13 +229,13 @@ Squire3_Load(function(addonName, addon)
 							}
 						},
 						dismount = {
-							name = L['Dismount'],
+							name = L['Dismount & toggle'],
 							order = 40,
 							type = 'group',
 							inline = true,
 							args = {
 								_desc = {
-									name = L['Squire3 will include the selected state(s) in its dismount action.'],
+									name = L['Squire3 will include the selected state(s) in its dismount and toggle actions.'],
 									type = 'description',
 									order = 0,
 								},
