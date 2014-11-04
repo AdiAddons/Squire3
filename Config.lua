@@ -209,7 +209,7 @@ Squire3_Load(function(addonName, addon)
 							end,
 							args = {
 								_desc = {
-									name = L['These mounts cannot be set as favorite in the Mount window, but you can select them there.'],
+									name = L['These mounts cannot be set as favorite in the Mount window, but you can select them here.'],
 									type = 'description',
 									order = 0,
 								},

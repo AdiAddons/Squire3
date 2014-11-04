@@ -117,6 +117,7 @@ function addon:ADDON_LOADED(event, name)
 	eventFrame:RegisterEvent('SPELLS_CHANGED')
 	eventFrame:RegisterEvent('PLAYER_REGEN_DISABLED')
 
+	self:ScanSpecialMounts()
 	self:RestoreFavorites()
 end
 
@@ -126,6 +127,7 @@ function addon:COMPANION_UPDATE(event, type)
 	if type then return end
 	addon:Debug(event, type)
 	eventFrame:UnregisterEvent('COMPANION_UPDATE')
+	self:ScanSpecialMounts()
 	self:RestoreFavorites()
 end
 
@@ -141,6 +143,17 @@ end
 -- Configuration loading helper
 function _G.Squire3_Load(callback)
 	return callback(addonName, addon)
+end
+
+function addon:ScanSpecialMounts()
+	for index = 1, C_MountJournal.GetNumMounts() do
+		local name, spellId, _, _, _, _, _, _, _, hideOnChar = C_MountJournal.GetMountInfo(index)
+		local _, canFavorite = C_MountJournal.GetIsFavorite(index)
+		if not canFavorite and not hideOnChar and not addon.specialMounts[spellId] then
+			addon:Debug('Cannot set as favorite:', name)
+			addon:RegisterSpecialMounts(spellId)
+		end
+	end
 end
 
 --------------------------------------------------------------------------------
