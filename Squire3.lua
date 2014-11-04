@@ -103,9 +103,6 @@ function addon:PLAYER_REGEN_DISABLED()
 end
 
 function addon:ADDON_LOADED(event, name)
-	if name == "Blizzard_PetJournal" then
-		return self:COMPANION_UPDATE(event)
-	end
 	if name ~= addonName then return end
 
 	self.db = LibStub('AceDB-3.0'):New(addonName.."DB", DEFAULT_SETTINGS, true)
@@ -113,20 +110,26 @@ function addon:ADDON_LOADED(event, name)
 	self.db.RegisterCallback(self, 'OnDatabaseShutdown', function() return self:SaveFavorites() end)
 
 	eventFrame:RegisterEvent('COMPANION_UPDATE')
+	eventFrame:RegisterEvent('PLAYER_ENTERING_WORLD')
 	eventFrame:RegisterEvent('UPDATE_SHAPESHIFT_FORMS')
 	eventFrame:RegisterEvent('SPELLS_CHANGED')
 	eventFrame:RegisterEvent('PLAYER_REGEN_DISABLED')
-
-	self:ScanSpecialMounts()
-	self:RestoreFavorites()
 end
-
 eventFrame:RegisterEvent('ADDON_LOADED')
+
+function addon:PLAYER_ENTERING_WORLD(event)
+	self:MountsLoaded(event)
+end
 
 function addon:COMPANION_UPDATE(event, type)
 	if type then return end
-	addon:Debug(event, type)
+	self:MountsLoaded(event)
+end
+
+function addon:MountsLoaded(event)
+	addon:Debug('Mounts loaded on', event)
 	eventFrame:UnregisterEvent('COMPANION_UPDATE')
+	eventFrame:UnregisterEvent('PLAYER_ENTERING_WORLD')
 	self:ScanSpecialMounts()
 	self:RestoreFavorites()
 end
