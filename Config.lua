@@ -201,10 +201,10 @@ Squire3_Load(function(addonName, addon)
 							type = 'group',
 							inline = true,
 							get = function(info)
-								return addon.db.profile.spells[tonumber(info[#info])]
+								return addon:GetFavoriteDB()[tonumber(info[#info])]
 							end,
 							set = function(info, value)
-								addon.db.profile.spells[tonumber(info[#info])] = value
+								addon:GetFavoriteDB()[tonumber(info[#info])] = value
 							end,
 							hidden = function()
 								for id in pairs(addon.specialMounts) do
