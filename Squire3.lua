@@ -180,8 +180,11 @@ end
 function addon:SaveFavorites()
 	local favorites = self:GetFavoriteDB()
 	for index = 1, C_MountJournal.GetNumMounts() do
-		local _, spellId, _, _, _, _, isFavorite = C_MountJournal.GetMountInfo(index)
-		favorites[spellId] = isFavorite
+		local isFavorite, canFavorite = C_MountJournal.GetIsFavorite(index)
+		if canFavorite then
+			local _, spellId = C_MountJournal.GetMountInfo(index)
+			favorites[spellId] = isFavorite
+		end
 	end
 end
 
