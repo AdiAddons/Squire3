@@ -334,6 +334,10 @@ Squire3_Load(function(addonName, addon)
 		return options
 	end
 
+	if AddonLoader and AddonLoader.RemoveInterfaceOptions then
+		AddonLoader:RemoveInterfaceOptions(addonName)
+	end
+
 	LibStub('AceConfig-3.0'):RegisterOptionsTable(addonName, GetOptions)
 	local panel = LibStub('AceConfigDialog-3.0'):AddToBlizOptions(addonName, addonName)
 
