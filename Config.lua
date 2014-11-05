@@ -195,33 +195,6 @@ Squire3_Load(function(addonName, addon)
 								},
 							}
 						},
-						mounts = {
-							name = L['Special mounts'],
-							order = 25,
-							type = 'group',
-							inline = true,
-							get = function(info)
-								return addon:GetFavoriteDB()[tonumber(info[#info])]
-							end,
-							set = function(info, value)
-								addon:GetFavoriteDB()[tonumber(info[#info])] = value
-							end,
-							hidden = function()
-								for id in pairs(addon.specialMounts) do
-									if IsPlayerSpell(id) then
-										return false
-									end
-								end
-								return true
-							end,
-							args = {
-								_desc = {
-									name = L['These mounts cannot be set as favorite in the Mount window, but you can select them here.'],
-									type = 'description',
-									order = 0,
-								},
-							}
-						},
 						cancel = {
 							name = L['Automatically cancel/leave'],
 							order = 30,
@@ -329,15 +302,6 @@ Squire3_Load(function(addonName, addon)
 			local id = spell.id
 			toggleGroups.spells.args[tostring(spell.id)] = {
 				name = GetSpellInfo(spell.id),
-				type = 'toggle',
-				hidden = function() return not IsPlayerSpell(id) end,
-				order = id,
-			}
-		end
-
-		for id in pairs(addon.specialMounts) do
-			toggleGroups.mounts.args[tostring(id)] = {
-				name = GetSpellInfo(id),
 				type = 'toggle',
 				hidden = function() return not IsPlayerSpell(id) end,
 				order = id,

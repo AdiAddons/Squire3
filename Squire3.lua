@@ -98,8 +98,9 @@ end
 addon.button = theButton
 
 --------------------------------------------------------------------------------
--- Event handler
+-- Event handling
 --------------------------------------------------------------------------------
+
 local eventFrame = CreateFrame("Frame")
 eventFrame:SetScript('OnEvent', function(_, event, ...) return addon[event](addon, event, ...) end)
 
@@ -124,6 +125,12 @@ function addon:ADDON_LOADED(event, name)
 	eventFrame:RegisterEvent('UPDATE_SHAPESHIFT_FORMS')
 	eventFrame:RegisterEvent('SPELLS_CHANGED')
 	eventFrame:RegisterEvent('PLAYER_REGEN_DISABLED')
+
+	if IsAddOnLoaded("Blizzard_PetJournal") then
+		self:Blizzard_PetJournal_Loaded(event, "Blizzard_PetJournal")
+	else
+		self.ADDON_LOADED = self.Blizzard_PetJournal_Loaded
+	end
 end
 eventFrame:RegisterEvent('ADDON_LOADED')
 
@@ -158,6 +165,16 @@ function _G.Squire3_Load(callback)
 	return callback(addonName, addon)
 end
 
+function addon:Blizzard_PetJournal_Loaded(event, name)
+	if name ~= "Blizzard_PetJournal" then return end
+	eventFrame:UnregisterEvent('ADDON_LOADED')
+	addon:Debug("Blizzard_PetJournal_Loaded", event, name)
+
+	hooksecurefunc(MountJournal.mountOptionsMenu, 'initialize', function(_, level)
+		return self:MountOptionsMenu_Init(level)
+	end)
+end
+
 function addon:ScanSpecialMounts()
 	for index = 1, C_MountJournal.GetNumMounts() do
 		local name, spellId, _, _, _, _, _, _, _, hideOnChar = C_MountJournal.GetMountInfo(index)
@@ -167,6 +184,40 @@ function addon:ScanSpecialMounts()
 			addon:RegisterSpecialMounts(spellId)
 		end
 	end
+end
+
+--------------------------------------------------------------------------------
+-- Hook Blizzard_PetJournal mount dropdown
+--------------------------------------------------------------------------------
+
+local L = addon.L
+
+function addon:MountOptionsMenu_Init(level)
+	if level ~= 1 then return end
+
+	local index = MountJournal.menuMountID
+	if not index then return end
+
+	local _, spellId = C_MountJournal.GetMountInfo(index)
+	if not self.specialMounts[spellId] then return end
+
+	-- Erase then cancel button
+	local dropDownFrame = _G["DropDownList"..level]
+	self:Debug('MountOptionsMenu_Init', level, dropDownFrame, dropDownFrame.numButtons)
+	dropDownFrame.numButtons = dropDownFrame.numButtons - 1
+
+	local favorites = self:GetFavoriteDB()
+	local info = UIDropDownMenu_CreateInfo()
+	info.notCheckable = true
+	local isFavorite = favorites[spellId]
+	info.text = isFavorite and L["Remove from Squire3 favorites"] or L["Add to Squire3 favorites"]
+	info.func = function() favorites[spellId] = not isFavorite end
+
+	UIDropDownMenu_AddButton(info, level)
+
+	info.text = CANCEL
+	info.func = nil
+	UIDropDownMenu_AddButton(info, level)
 end
 
 --------------------------------------------------------------------------------
