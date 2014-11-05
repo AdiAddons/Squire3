@@ -118,6 +118,7 @@ function addon:RefreshStates()
 		end
 		if state.isForm then
 			state.condition = formMap[state.spellId] and format("form:%d", formMap[state.spellId]) or nil
+			state.GetCondition = state.condition and GetCondition or NoCondition
 		end
 		if state.condition then
 			tinsert(orderedConditions, key)
