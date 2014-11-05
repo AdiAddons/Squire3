@@ -177,28 +177,37 @@ function addon:GetFavoriteDB()
 	return self.db[self.db.profile.favoriteSection].favorites
 end
 
-function addon:SaveFavorites()
-	local favorites = self:GetFavoriteDB()
-	for index = 1, C_MountJournal.GetNumMounts() do
+local function favoriteIterator(num, index)
+	while index < num do
+		index = index + 1
 		local isFavorite, canFavorite = C_MountJournal.GetIsFavorite(index)
 		if canFavorite then
-			local _, spellId = C_MountJournal.GetMountInfo(index)
-			favorites[spellId] = isFavorite
+			local _, spellId, _, _, _, _, _, _, _, hideOnChar, isCollected = C_MountJournal.GetMountInfo(index) C_MountJournal.GetMountInfo(index)
+			if isCollected and not hideOnChar then
+				return index, spellId, isFavorite
+			end
 		end
+	end
+end
+
+local function iterateFavorites()
+	return favoriteIterator, C_MountJournal.GetNumMounts(), 0
+end
+
+function addon:SaveFavorites()
+	local favorites = self:GetFavoriteDB()
+	for index, spellId, isFavorite in iterateFavorites() do
+		favorites[spellId] = isFavorite
 	end
 end
 
 function addon:RestoreFavorites()
 	local favorites = self:GetFavoriteDB()
-	for index = 1, C_MountJournal.GetNumMounts() do
-		local isFavorite, canFavorite = C_MountJournal.GetIsFavorite(index)
-		if canFavorite then
-			local _, spellId = C_MountJournal.GetMountInfo(index)
-			local saved = favorites[spellId] or false
-			if saved ~= isFavorite then
-				C_MountJournal.SetIsFavorite(index, saved)
-				self:Debug("Restored favorite status of", GetSpellInfo(spellId), "to", saved and "favorite" or "not favorite")
-			end
+	for index, spellId, isFavorite in iterateFavorites() do
+		local saved = favorites[spellId] or false
+		if saved ~= isFavorite then
+			self:Debug("Restoring favorite status of", index, spellId, GetSpellInfo(spellId), ":", saved, "actual:", isFavorite)
+			C_MountJournal.SetIsFavorite(index, saved)
 		end
 	end
 end
