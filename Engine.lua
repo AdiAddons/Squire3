@@ -62,7 +62,7 @@ local states = {
 		name          = L['Flying'],
 		condition     = "flying",
 		IsAvailable   = AlwaysTrue,
-		IsUsable      = function(self, env) return not env.instance end,
+		IsUsable      = function(self, env) return env.reallyFlyable end,
 		GetCondition  = GetCondition,
 		GetCancelArgs = GetCancelArgs,
 	},
@@ -332,13 +332,13 @@ function addon:AddSpells(append, env, settings)
 			if pos then
 				condition = strsub(condition, 1, pos)..GetModifierCondition(settings.groundModifier, ",no")..strsub(condition, pos+1)
 			end
-			if env.instance then
+			if not env.reallyFlyable then
 				local a, b = strfind(condition, ",?noflyable,?")
 				if a and b then
 					condition = strsub(condition, 1, a-1) .. strsub(condition, b+1)
 				end
 			end
-			if not pos or not env.instance then
+			if not pos or env.reallyFlyable then
 				append("cast", format("%s%s%s",
 					condition,
 					toggle and dismount[spell.id] and "" or "!",
@@ -414,7 +414,7 @@ function addon:AddMounts(append, env, settings)
 		contexts:Update(spellId, groundSpeed, flyingSpeed, swimmingSpeed)
 	end
 
-	local flyingSpell = not env.instance and contexts.flying:GetRandom()
+	local flyingSpell = env.reallyFlyable and contexts.flying:GetRandom()
 	local groundSpell = contexts.ground:GetRandom()
 	local swimmingSpell = contexts.swimming:GetRandom()
 

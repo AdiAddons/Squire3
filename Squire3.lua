@@ -84,12 +84,29 @@ end)
 theButton:SetAttribute('type', 'macro')
 theButton:SetAttribute('type-dismount', 'macro')
 
-local env = {}
+local function IsReallyFlyable(continent)
+	if continent == 1 or continent == 2 or continent == 5 then
+		-- Kalimdor, Eastern Kingdoms & the Maelstrom require Flight Master's License
+		return IsPlayerSpell(90267)
+	elseif continent == 4 then
+		-- Northrend requires Cold Weather Flying
+		return IsPlayerSpell(54197)
+	elseif continent == 6 then
+		-- Pandaria requires Wisdom of the Four Winds
+		return IsPlayerSpell(115913)
+	end
+	-- Outland (#3) requires the flying skill (and is hopefully handled by IsUsableSpell)
+	-- Draenor (#7) is not flyable yet
+	return false
+end
+
+local env = { continent = 0 }
 function addon:UpdateAction(widget, button)
 	env.moving = GetUnitSpeed("player") > 0 or IsFalling()
 	env.combat = button == "combat" or InCombatLockdown()
 	env.indoors = IsIndoors()
-	env.instance = IsInInstance()
+	env.reallyFlyable = not IsInInstance() and IsReallyFlyable(env.continent)
+	addon:Debug('continent=', env.continent, 'in instance=',  IsInInstance(), 'really flyable=', env.reallyFlyable)
 	env.canMount = not (env.moving or env.combat or env.indoors)
 	local suffix = (button == "dismount") and "-dismount" or ""
 	widget:SetAttribute("macrotext"..suffix, addon:BuildMacro(button, env, self.db.profile))
@@ -126,6 +143,10 @@ function addon:ADDON_LOADED(event, name)
 	eventFrame:RegisterEvent('SPELLS_CHANGED')
 	eventFrame:RegisterEvent('PLAYER_REGEN_DISABLED')
 
+	hooksecurefunc('SetMapToCurrentZone', function()
+		env.continent = GetCurrentMapContinent()
+	end)
+
 	if IsAddOnLoaded("Blizzard_PetJournal") then
 		self:Blizzard_PetJournal_Loaded(event, "Blizzard_PetJournal")
 	else
@@ -149,6 +170,7 @@ function addon:MountsLoaded(event)
 	eventFrame:UnregisterEvent('PLAYER_ENTERING_WORLD')
 	self:ScanSpecialMounts()
 	self:RestoreFavorites()
+	SetMapToCurrentZone()
 end
 
 function addon:UPDATE_SHAPESHIFT_FORMS()
