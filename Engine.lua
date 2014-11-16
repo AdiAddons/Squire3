@@ -74,8 +74,9 @@ local states = {
 		IsUsable      = AlwaysTrue,
 		GetCondition  = GetCondition,
 		GetCancelArgs = GetCancelArgs,
-	}
+	},
 }
+
 local orderedCancels = {}
 local orderedConditions = {}
 addon.states = states
@@ -135,12 +136,25 @@ end
 -- Alternative spells
 --------------------------------------------------------------------------------
 
+local function IsSpecialSpellUsable(self) return IsPlayerSpell(self.id) end
+
 local specialSpells = {}
-function addon:RegisterSpecialSpells(id, condition, ground, flying, swimming, ...)
-	tinsert(specialSpells, { id = id, condition = condition, ground = ground, flying = flying, swimming = swimming })
-	if ... then
+function addon:RegisterSpecialSpells(id, condition, ground, flying, swimming, IsUsable, ...)
+	if not id then return end
+	local spell = {
+		id        = id,
+		condition = condition,
+		ground    = ground,
+		flying    = flying,
+		swimming  = swimming,
+		IsUsable  = IsSpecialSpellUsable
+	}
+	tinsert(specialSpells, spell)
+	if type(IsUsable) == "function" then
+		spell.IsUsable = IsUsable
 		return self:RegisterSpecialSpells(...)
 	end
+	return self:RegisterSpecialSpells(IsUsable, ...)
 end
 addon.specialSpells = specialSpells
 
@@ -326,7 +340,7 @@ function addon:AddSpells(append, env, settings)
 	if env.canMount then return end
 	local toggle, dismount = settings.toggleMode, settings.dismount
 	for index, spell in ipairs(specialSpells) do
-		if IsPlayerSpell(spell.id) and settings.spells[spell.id] then
+		if spell:IsUsable(env, settings) and settings.spells[spell.id] then
 			local condition = spell.condition
 			local _, pos = strfind(condition, "%Aflyable")
 			if pos then
@@ -384,7 +398,7 @@ function addon:IterateMounts(env, settings)
 		while index < 0 do
 			index = index + 1
 			local spell = specialSpells[1-index]
-			if IsPlayerSpell(spell.id) and settings.spells[spell.id] then
+			if spell:IsUsable() and settings.spells[spell.id] then
 				if SecureCmdOptionParse(spell.condition) then
 					return spell.id, spell.ground, spell.flying, spell.swimming
 				end

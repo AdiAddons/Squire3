@@ -181,7 +181,7 @@ Squire3_Load(function(addonName, addon)
 							end,
 							hidden = function()
 								for i, spell in ipairs(addon.specialSpells) do
-									if IsPlayerSpell(spell.id) then
+									if spell:IsUsable() then
 										return false
 									end
 								end
@@ -299,11 +299,11 @@ Squire3_Load(function(addonName, addon)
 		local toggleGroups = options.args.spells.args
 
 		for i, spell in ipairs(addon.specialSpells) do
-			local id = spell.id
+			local id, spell = spell.id, spell
 			toggleGroups.spells.args[tostring(spell.id)] = {
 				name = GetSpellInfo(spell.id),
 				type = 'toggle',
-				hidden = function() return not IsPlayerSpell(id) end,
+				hidden = function() return not spell:IsUsable() end,
 				order = id,
 			}
 		end
