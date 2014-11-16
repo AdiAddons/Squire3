@@ -31,6 +31,21 @@ if "Worgen" == select(2, UnitRace("player")) then
 	)
 end
 
+-- Mount-like Garrison ability
+addon:RegisterSpecialSpells(
+	_G.DraenorZoneAbilitySpellID,
+	"[outdoors]",
+	100,
+	nil,
+	nil,
+	function(self)
+		-- Resolve the Garrison Ability down to the actual ability
+		local actualAbility = HasDraenorZoneAbility and select(7, GetSpellInfo(GetSpellInfo(self.id)))
+		-- Telaari Talbuk or Frostwolf War Wolf
+		return actualAbility == 165803 or actualAbility == 164222
+	end
+)
+
 if isA("DRUID") then
 	addon:RegisterCancelSpells(
 		   768, "form", -- Cat form
