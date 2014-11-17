@@ -35,7 +35,7 @@ end
 addon:RegisterSpecialSpells(
 	_G.DraenorZoneAbilitySpellID,
 	"[outdoors]",
-	100,
+	102,
 	nil,
 	nil,
 	function(self)
