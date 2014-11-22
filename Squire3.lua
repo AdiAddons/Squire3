@@ -94,8 +94,12 @@ local function IsReallyFlyable(continent)
 	elseif continent == 6 then
 		-- Pandaria requires Wisdom of the Four Winds
 		return IsPlayerSpell(115913)
+	elseif continent == 3 then
+		-- Outland requires Expert Riding or above
+		return IsPlayerSpell(90265)	-- Master
+			or IsPlayerSpell(34091)	-- Artisan
+			or IsPlayerSpell(34090)	-- Expert
 	end
-	-- Outland (#3) requires the flying skill (and is hopefully handled by IsUsableSpell)
 	-- Draenor (#7) is not flyable yet
 	return false
 end
