@@ -457,10 +457,18 @@ function addon:AddMounts(append, env, settings)
 		end
 	end
 	if groundSpell then
-		append("cast", format(
-			"%s%s",
-			toggle and dismount[groundSpell] and "" or "!",
-			(GetSpellInfo(groundSpell))
-		))
+		if IsUsableItem(114925) then -- Prototype Mechano-Hog hack
+			append("use", format(
+				"%s%s",
+				toggle and dismount[groundSpell] and "" or "!",
+				(GetItemInfo(114925))
+			))
+		else
+			append("cast", format(
+				"%s%s",
+				toggle and dismount[groundSpell] and "" or "!",
+				(GetSpellInfo(groundSpell))
+			))
+		end
 	end
 end
