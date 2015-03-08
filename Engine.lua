@@ -376,6 +376,7 @@ local mountTypeSpeeds = {
 	[248] = { 98, 310, nil}, -- Flying mounts
 	[254] = {nil, nil, 450}, -- Subdued Seahorse
 	[269] = {100, nil, nil}, -- Water striders
+	[284] = { 60, nil, nil}, -- Chauffeured Chopper
 }
 local unknownMountType = {}
 
