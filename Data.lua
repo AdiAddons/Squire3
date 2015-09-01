@@ -77,8 +77,7 @@ if isA("MONK") then
 	)
 	addon:RegisterSpecialSpells(
 		125883, "[nocombat,outdoors,flyable]", nil, 54, nil, -- Zen Flight
-		109132, "", 10, nil, nil, -- Roll
-		121827, "", 10, nil, nil  -- Celerity Roll
+		109132, "", 10, nil, nil -- Roll
 	)
 end
 
